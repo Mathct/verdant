@@ -1,0 +1,22 @@
+{
+    "100": {
+        "name": "Game mode",
+        "values": {
+            "1": {
+                "name": "Normal", 
+                "tmdisplay": "Normal", 
+                "description": "Playing without objective cards"
+            },
+
+            "2": {
+                "name": "Advanced", 
+                "tmdisplay": "Advanced", 
+                "description": "Playing with objective cards"
+            }   
+                
+        },
+        
+        "default": 1
+              
+    }
+}

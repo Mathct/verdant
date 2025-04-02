@@ -1,0 +1,101 @@
+{
+    "table": {
+
+        "turns_number": {
+          "id": 10,
+          "name": "Number of turns",
+          "type": "int"
+        }
+
+        
+    },
+
+
+
+    "player": {
+
+        "turns_number": {
+          "id": 10,
+          "name": "Number of turns",
+          "type": "int"
+        },
+
+        "completed_plants": {
+          "id": 11,
+          "name": "Completed plants",
+          "type": "int"
+        },
+
+        "extra_verdancy": {
+          "id": 12,
+          "name": "Extra verdancy",
+          "type": "int"
+        },
+
+        "pot_bonus": {
+          "id": 13,
+          "name": "Pots points",
+          "type": "int"
+        },
+
+        "room_bonus": {
+          "id": 14,
+          "name": "Rooms points",
+          "type": "int"
+        },
+
+        "furniture_pets_number": {
+          "id": 15,
+          "name": "Unique Furniture & Pets points",
+          "type": "int"
+        },
+
+        "plant_collector_bonus": {
+          "id": 16,
+          "name": "5 Plants set bonus",
+          "type": "int"
+        },
+
+        "room_collector_bonus": {
+          "id": 17,
+          "name": "5 Rooms set bonus",
+          "type": "int"
+        },
+
+        "plant_goal": {
+          "id": 18,
+          "name": "Plant goal bonus",
+          "type": "int"
+        },
+
+        "item_goal": {
+          "id": 19,
+          "name": "Item goal bonus",
+          "type": "int"
+        },
+
+        "room_goal": {
+          "id": 20,
+          "name": "Room goal bonus",
+          "type": "int"
+        },
+
+        "fertilizer_used": {
+          "id": 21,
+          "name": "Fertilizer used",
+          "type": "int"
+        },
+
+        "hand_trowel_used": {
+          "id": 22,
+          "name": "Hand trowel used",
+          "type": "int"
+        },
+
+        "watering_can": {
+          "id": 23,
+          "name": "Watering used",
+          "type": "int"
+        }
+    }
+}

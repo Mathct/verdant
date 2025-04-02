@@ -1,0 +1,949 @@
+/**
+ *------
+ * BGA framework: Gregory Isabelli & Emmanuel Colin & BoardGameArena
+ * verdant implementation : © <Mathieu Chatrain> <mathieu.chatrain@gmail.com> && <Yannick Priol> <camertwo@hotmail.com>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ *
+ * verdant.css
+ *
+ * verdant stylesheet
+ *
+ */
+
+* {
+  box-sizing: border-box; 
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+:root {
+    --scorepad_width: 440px;
+    --scorepad_height: 800px;
+
+    --card-width: 128px;
+    --card-height: 200px;
+    --grid-width: 133px;
+    --minigrid-height: 100px;
+    --grid-height: 205px;
+    --grid-gap: 10px;
+    --house-padding: 10px;
+    --tile-width: 50px;
+    --minipot-width: 32px;
+    --lightning-width: 24px;
+
+}
+
+body {
+    /*background-image: url("img/ArtNouvBrown.jpg"); /* Remplace par le bon chemin */
+    background-image: url("img/VE_Green_BG.jpg");
+    background-repeat: repeat; /* Répète l'image dans toutes les directions */
+    background-size: auto; /* Taille originale de l'image */
+
+/*    background-image: url('img/VE_Market_Background.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;*/
+
+}
+
+
+
+/* Fonts and Tooltips */
+
+  @font-face {
+  font-family: "MyriadPro";
+  font-style: normal;
+  font-weight: normal;
+  src: local("MyriadPro"), url("img/MyriadPro.otf");
+}
+
+  @font-face {
+  font-family: "MinionPro";
+  font-style: normal;
+  font-weight: normal;
+  src: local("MinionPro"), url("img/MinionPro.otf");
+}
+
+  @font-face {
+  font-family: "Arial";
+  font-style: normal;
+  font-weight: normal;
+  src: local("Arial"), url("img/Arial.ttf");
+}
+
+/***************************************
+/*
+/*        TOOLTIPS
+/*
+/****************************************/
+
+  /* tooltip Card */
+  .tooltip_content {
+    display: flex;
+    justify-content: space-between;
+    height: auto;
+    gap: 10px;
+    flex-wrap: wrap;
+  
+  }
+   
+  .info_container {
+    flex: 4;
+    min-width: 200px;
+  }
+  
+  .tooltip_title {
+    font-family: MinionPro;
+    font-size: 20pt;
+    font-variant: small-caps;
+    /*color:#719e1f;*/
+    color: #1f3a21;
+  }
+  
+  .tooltip_desc {
+    font-family: MyriadPro;
+    font-size: 12pt;
+    color:#1f3a21;
+  }
+
+  .tooltip_info {
+    font-family: MinionPro;
+    font-size: 12pt;
+    color:#2a5d9c;
+  }
+
+  .tile_container {
+    flex: 1;
+    margin-right: 10px;
+    display: flex;
+    justify-content: center; /* Centre horizontalement */
+    align-items: center; /* Centre verticalement */
+    min-height: 100px;
+    gap: 10px;
+  }
+  
+  .info_container {
+    flex: 4;
+    min-width: 200px;
+  }
+
+
+
+.hidden {
+    display: none !important;
+}
+
+.empty {
+    visibility: hidden;
+}
+
+
+
+/*  ____  _                             ____                  _  */
+/* |  _ \| | __ _ _   _  ___ _ __ ___  |  _ \ __ _ _ __   ___| | */
+/* | |_) | |/ _` | | | |/ _ \ '__/ __| | |_) / _` | '_ \ / _ \ | */
+/* |  __/| | (_| | |_| |  __/ |  \__ \ |  __/ (_| | | | |  __/ | */
+/* |_|   |_|\__,_|\__, |\___|_|  |___/ |_|   \__,_|_| |_|\___|_| */
+/*                |___/                                          */
+
+/* Conteneur */
+.a-board {
+  clear: both;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  height: 60px;
+}
+
+
+/* Groupe contenant une icône et son compteur */
+.icon-group {
+  display: flex;
+  align-items: center;
+  gap: 2px; /* Espace entre l'icône et le texte */
+  margin : 0 5px;
+}
+
+/* Compteur */
+.icon-text {
+font-family: "MyriadPro";
+  font-size: 16pt;
+  line-height: 50px;
+}
+
+.reserve {
+  background-position: -400% 0%;
+}
+
+.player-board, .roundedbox, #page-title, .current_player_is_active #page-title {
+  background-color: #d9e9c2;
+}
+
+
+
+/* Conteneur principal */
+#resized_id {
+  /*anachrony*/
+  position: relative;
+  transform-origin: top left;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction:column;
+  align-items: center;
+  gap: 10px;
+}
+
+
+
+/* Conteneur de la feuille de scores */
+.scorepad {
+  position: relative;
+  width: var(--scorepad_width);
+  height: var(--scorepad_height);
+  background-image: url("img/VE_Scorepad.jpg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+
+.pad_space {
+  position: absolute;
+  width: 15%;
+  height: 8%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: MyriadPro;
+  font-weight: bold;
+  font-size: 24pt;
+  color: white;
+  text-shadow: 
+    1px 1px 0 black, 
+    -1px -1px 0 black,
+    1px -1px 0 black,
+    -1px 1px 0 black
+}
+
+
+
+
+
+/* Conteneur de la table */
+#board_id {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  height: auto;
+  margin: 0px auto;
+  border-radius: 20px;
+  z-index: 1;
+  position: relative;
+  /*background-color:#2db2b6;*/
+  
+}
+
+/*                       _        _    */
+/*  _ __ ___   __ _ _ __| | _____| |_  */
+/* | '_ ` _ \ / _` | '__| |/ / _ \ __| */
+/* | | | | | | (_| | |  |   <  __/ |_  */
+/* |_| |_| |_|\__,_|_|  |_|\_\___|\__| */
+
+/* Conteneur principal du marché */
+.market-container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--house-padding);
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background-color: rgba(119, 136, 153, 0.8);
+  border: 3px solid #555; /* Bordure noire autour du marché */
+
+  width : auto;
+  height: auto;
+}
+
+
+.market-name {
+  position: relative;
+  display: flex;
+  padding: 5px;
+  justify-content: center;
+  align-items: center;
+}
+
+.market-name .market-name-text{
+  font-size: 20pt;
+  font-weight: bold;
+  font-family: "MyriadPro";
+  color: #ffffff;
+  text-shadow: 0 0 1px black, 0 0 2px black, 0 0 3px black;
+}
+
+
+
+.market-inner-container {
+  display: flex;
+  flex-direction: row;
+  width : auto;
+  height: auto;
+  gap: 10px;
+}
+
+/* conteneur des 3 cartes Goals */
+.market-advanced {
+  display: flex;
+  flex-direction: column;
+  width :var(--card-width);
+  justify-content: space-between;  ;
+  height: auto;
+}
+
+/* Grille du marché (tiles et cartes) */
+.market-grid {
+  display: grid;
+  grid-template-columns: repeat(5, var(--card-width)); /* 5 éléments par ligne */
+  grid-template-rows: 
+      var(--minigrid-height)  /* 1ère ligne de pots */
+      var(--card-height)   /* 2ème ligne de cartes */
+      var(--minigrid-height)  /* 3ème ligne de tiles */
+      var(--card-height);  /* 4ème ligne de cartes */
+  gap: var(--grid-gap);
+  justify-content: center;
+  align-items: center;
+  padding: var(--house-padding);
+  /*background-color: lightslategray;*/
+  place-items: center;
+}
+
+
+.market-grid > div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: var(--card-width);
+  position: relative;
+}
+
+
+
+
+
+
+
+
+
+.pot-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%; 
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    place-items: center;
+}
+
+.plant-deck {
+  background-position: -1000% -500%;
+  grid-column-start: 1;
+  grid-row-start: 2;
+}
+
+.room-deck {
+  background-position: -1100% -500%;
+  grid-column-start: 1;
+  grid-row-start: 4;
+}
+
+#plant_market_deck, #room_market_deck {
+  position: relative; /* pour positionner les counters ensuite */
+}
+
+.deck-text {
+  position: absolute;
+  font-family: "MyriadPro";
+  font-size: 20pt;
+  font-weight: bold;
+  transform: translateX(-50%);
+  left: 50%;
+}
+
+#nb_plants {
+  bottom: 0%;
+  color: #1f3a21;
+}
+
+#nb_rooms {
+  top: 5%;
+  color: #e0e7c2;
+}
+
+.bag-icon {
+  background-position: -500% 0%; /* using big-icon */
+  grid-column-start: 1;
+  grid-row-start: 3;
+}
+
+
+
+.market-thumb {
+  position: relative;
+  background-position: 0% -100%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+
+.market-thumb-text {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); 
+  color: #1f3a21;
+  font-size: 20pt;
+  font-weight: bold;
+  font-family: "MyriadPro";
+  text-shadow: 2px 2px 5px white, -2px -2px 5px white, 2px -2px 5px white, -2px 2px 5px white;
+}
+
+
+.white-shadow-text { /* pots and verdancy text */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); 
+  color: #e0e7c2;
+  font-size: 20pt;
+  font-weight: bold;
+  font-family: "MyriadPro";
+  text-shadow: 2px 2px 5px black, -2px -2px 5px black, 2px -2px 5px black, -2px 2px 5px black;
+}
+
+.mini-white-shadow-text { /* pots and verdancy text */
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); 
+  color: #e0e7c2;
+  font-size: 12pt;
+  font-weight: bold;
+  font-family: "MyriadPro";
+  text-shadow: 2px 2px 5px black, -2px -2px 5px black, 2px -2px 5px black, -2px 2px 5px black;
+}
+
+
+
+
+/*  _   _                       */
+/* | | | | ___  _   _ ___  ___  */
+/* | |_| |/ _ \| | | / __|/ _ \ */
+/* |  _  | (_) | |_| \__ \  __/ */
+/* |_| |_|\___/ \__,_|___/\___| */
+
+/* Conteneur principal */
+.house-container {
+  display: flex;
+  flex-direction: column;
+  border: 3px solid;
+  /*background: rgba(240, 240, 240, 0.8);*/
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: var(--house-padding);
+  transition: all 0.3s ease-in-out;
+  width : auto;
+  height: auto;
+}
+
+.house-name {
+  position: relative;
+  display: flex;
+  padding: 5px;
+  justify-content: center;
+  align-items: center;
+}
+
+.house-name .player-name {
+  font-size: 20pt;
+  font-weight: bold;
+  font-family: "MyriadPro";
+  text-shadow: 0 0 1px white, 0 0 2px white, 0 0 3px white;
+}
+
+
+.house-grid-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: calc(5 * var(--card-width) + 4 * var(--grid-gap));
+  min-height: calc(3 * var(--card-height) + 2 * var(--grid-gap));
+  width : auto;
+  height: auto;
+  /*background-color: lightslategray;*/
+  border-radius: 4px;
+}
+
+.house-grid {
+  display: grid;
+  /*background-color: lightslategray;*/
+  padding: var(--house-padding);
+  border-radius: 4px;
+  width: max-content;
+  margin: auto; /* Centrage horizontal */
+}
+
+
+/* conteneur pour une carte dans une house */
+.grid-slot {
+  width: var(--grid-width);
+  height: var(--grid-height);
+  /*background-color: rgba(255, 255, 255, 0.1);*/
+  /*border: 1px dashed gray;*/
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.possible_in_house {
+  opacity: 0.7;
+}
+
+
+
+/*   ____              _      */
+/*  / ___|__ _ _ __ __| |___  */
+/* | |   / _` | '__/ _` / __| */
+/* | |__| (_| | | | (_| \__ \ */
+/*  \____\__,_|_|  \__,_|___/ */
+
+.plant {
+  width: var(--card-width);
+  height: var(--card-height);
+  background-image: url("img/VE_Plants.jpg");
+  background-size: 1200% 600%;
+  border-radius: 4px;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.room {
+  width: var(--card-width);
+  height: var(--card-height);
+  background-image: url("img/VE_Rooms.jpg");
+  background-size: 1200% 600%;
+  border-radius: 4px;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
+
+.goal {
+  position: relative; 
+  width: var(--card-width);
+  height: var(--card-height);
+  background-image: url("img/VE_Goals.jpg");
+  background-size: 1000% 400%;
+  border-radius: 4px;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
+}
+
+
+
+
+
+
+
+/*  _____ _ _                     ___                     */
+/* |_   _(_) | ___  ___          |_ _|___ ___  _ __  ___  */
+/*   | | | | |/ _ \/ __|  _____   | |/ __/ _ \| '_ \/ __| */
+/*   | | | | |  __/\__ \ |_____|  | | (_| (_) | | | \__ \ */
+/*   |_| |_|_|\___||___/         |___\___\___/|_| |_|___/ */
+
+.tile {
+  width: var(--tile-width);
+  height: var(--tile-width);
+  background-image: url("img/VE_Tiles.jpg");
+  background-size: 1000% 500%;
+  border-radius: 4px;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
+}
+
+.icon {
+  width: var(--tile-width);
+  height: var(--tile-width);
+  background-image: url("img/VE_Icons.png");
+  background-size: 600% 200%;
+}
+
+.minipot {
+  width: var(--minipot-width);
+  height: var(--minipot-width);
+  background-image: url("img/VE_Icons.png");
+  background-size: 600% 200%;
+  position: relative;
+}
+
+.concrete {
+  background-position: 0% 0%;
+}
+
+.wood {
+  background-position: -100% 0%;
+}
+
+.ceramic {
+  background-position: -200% 0%;
+}
+
+.terracotta {
+  background-position: -300% 0%;
+}
+
+.big-icon { /* bag */
+  width: calc(var(--tile-width) * 2);
+  height: calc(var(--tile-width) * 2);
+  background-image: url("img/VE_Icons.png");
+  background-size: 600% 200%;
+}
+
+.house-verdancy {
+  position: absolute;
+  background-position: -500% -100%;
+  top: 20%;
+}
+
+.house-pot {
+  position: absolute;
+  top: 60%;
+  left: 31%;
+}
+
+.tile-house {
+  position:absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%); 
+}
+
+.lightning-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lightning {
+    width: var(--lightning-width);
+    height: var(--lightning-width);
+    background-image: url("img/VE_Lightnings.png");
+    background-size: 300% 100%;
+    display: inline-block;
+}
+
+.full-sun {
+  background-position: 0% 0%;
+}
+
+.semi-shade {
+  background-position: -100% 0%;
+}
+
+.shade {
+  background-position: -200% 0%;
+}
+
+.dark-green-line {
+    border: 1px solid #1f3a21;
+    margin: 5px 0;
+}
+
+
+
+/*     _          _                 _   _                  */
+/*    / \   _ __ (_)_ __ ___   __ _| |_(_) ___  _ __  ___  */
+/*   / _ \ | '_ \| | '_ ` _ \ / _` | __| |/ _ \| '_ \/ __| */
+/*  / ___ \| | | | | | | | | | (_| | |_| | (_) | | | \__ \ */
+/* /_/   \_\_| |_|_|_| |_| |_|\__,_|\__|_|\___/|_| |_|___/ */
+
+@keyframes sprite-scale-disappear {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(2); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+.sprite-disappear {
+  animation: sprite-scale-disappear 0.6s ease-out forwards;
+}
+
+@keyframes sprite-scale-appear {
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(2.5); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.sprite-appear {
+  animation: sprite-scale-appear 0.6s ease-out forwards;
+}
+
+
+
+
+
+
+
+
+
+
+
+/* Emplacements disponibles */
+.available {
+    width: 100px;
+    height: 150px;
+    border: 2px dashed gray;
+    background: rgba(200, 200, 200, 0.3);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.available:hover {
+    background: rgba(100, 100, 100, 0.2);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* PENDING */
+
+.selectable, .selectablemulti, .selectablethumb {
+  cursor: pointer;
+  pointer-events: auto !important;
+  outline: 3px dashed yellow; 
+  border-radius: 4px;
+  box-shadow: 0 0 3px black;
+}
+
+
+
+.selected, .selectedmulti, .selectedthumb {
+  outline: 3px solid yellow; 
+  border-radius: 4px;
+  box-shadow: 0 0 3px black;
+}
+
+.selectedmulti, .selectedthumb {
+  cursor: pointer;
+  pointer-events: auto !important;
+}
+
+.item_bt {
+  width: 30px;
+  height: 30px;
+  display:inline-block;
+  vertical-align: middle;
+  border: 1px solid grey;
+  background-image: url("img/VE_Tiles.jpg");
+  background-size: 1000% 500%;
+  border-radius: 6px;
+}
+
+.thumb_bt {
+    width: 48px;
+    height: 30px;
+    display:inline-block;
+    vertical-align: middle;
+    background-image: url("img/VE_Thumbs.png");
+    background-size: 100% 100%;
+    border-radius: 6px;
+    margin-left: 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Tisaac Help Mode */
+/****** help mode Tisaac ********/
+#help-mode-switch .checkbox {
+    display: none;
+}
+
+#help-mode-switch .label {
+    background-color: rgb(57, 86, 105);
+    border-radius: 40px;
+    cursor: pointer;
+    display: inline-block;
+    position: relative;
+    height: 22px;
+    width: 40px;
+}
+#help-mode-switch .label .ball {
+    background-color: #fff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    height: 18px;
+    width: 18px;
+    transform: translateX(0px);
+    transition: transform 0.2s linear, color 0.7s linear;
+}
+#help-mode-switch .checkbox:checked + .label .ball {
+    transform: translateX(18px);
+}
+#help-mode-switch svg {
+    width: 22px;
+    color: rgb(57, 86, 105);
+}
+#ebd-body.help-mode .tooltipable {
+    cursor: help;
+}
+
+#ebd-body.help-mode .tooltipable .cardcontent {
+    pointer-events: none;
+}
+
+/*
+.help-marker {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 15px;
+  height: 15px;
+  z-index: 900;
+  border: 1px solid black;
+  border-radius: 50%;
+}
+.help-marker svg {
+  width: 15px;
+  height: 15px;
+}
+#ebd-body:not(.help-mode) .help-marker {
+  opacity: 0;
+  pointer-events: none;
+}
+*/
+
+
+
+
+
+
+
+
+
+
+.dijitTooltip {
+  width: auto !important;
+}
+
+
+
+
+/* flip and replace */
+.flip-container {
+  background-color: transparent;
+  width: 100%;
+  height: 100%;
+  perspective: 1000px;
+}
+.flip-container .flip-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.8s ease-in-out;
+  transform: rotateY(0deg);
+}
+.flip-container .flip-inner .flip-front,
+.flip-container .flip-inner .flip-back {
+  position: absolute;
+  width: 100%;
+  height: 100%; /* Safari */
+  backface-visibility: hidden;
+  transform: rotateY(0deg);
+}
+.flip-container .flip-inner .flip-back {
+  transform: rotateY(180deg);
+}
+.flip-container.flipped .flip-inner {
+  transform: rotateY(180deg);
+}
+
+
+
+
+/* THOUN Help Button */
+#verdant_help_button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  bottom: 12px;
+  left: 5px;
+  width: 50px;
+  height: 50px;
+  background: #60c2cb;
+  font-weight: bold;
+  color: white;
+  border-radius: 50%;
+  box-shadow: 3px 5px 5px rgb(0, 0, 0);
+  cursor: pointer;
+  z-index: 949;
+  font-size: 28pt;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+  position: relative;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 50%;
+    text-align: center;
+}
+
+.close {
+    position: absolute;
+    right: 15px;
+    top: 10px;
+    font-size: 25px;
+    cursor: pointer;
+}
+
