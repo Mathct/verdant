@@ -38,7 +38,6 @@ class Game extends \Table
     public array $_ITEM_GOAL_CARDS;
     public array $_ROOM_GOAL_CARDS;
     public array $_PLANT_CARDS;
-    public array $_ITEM_CARDS;
     public array $_ROOM_CARDS;
 
     public static $instance = null; //ATTENTION
@@ -65,6 +64,7 @@ class Game extends \Table
             "plant_goal" => 10,
             "room_goal" => 11,
             "item_goal" => 12,
+            "last_turn" => 13,
         ]);
 
         self::$instance = $this; // ATTENTION
@@ -148,36 +148,115 @@ class Game extends \Table
         self::initStat('player', 'room_goal', 0);
         self::initStat('player', 'fertilizer_used', 0);
         self::initStat('player', 'hand_trowel_used', 0);
-        self::initStat('player', 'watering_can', 0);
+        self::initStat('player', 'watering_can_used', 0);
 
-
-
-        /* Init Objectifs */
-
-        if ($this->getGameStateValue('game_mode') == 2) {
-            $rand1 = bga_rand(1, 10);
-            $this->setGameStateInitialValue('plant_goal', $rand1);
-            $rand2 = bga_rand(1, 10);
-            $this->setGameStateInitialValue('room_goal', $rand2);
-            $rand3 = bga_rand(1, 10);
-            $this->setGameStateInitialValue('item_goal', $rand3);
-        }
+        $this->setGameStateInitialValue('last_turn', 0);
 
 
         $nbreplayers = count($players);
 
-        /* init Plant et Room */
+        /* Init Objectifs */
 
-        for ($i = 1; $i <= 60; $i++) {
 
-            $card[] = array('type' => $i, 'type_arg' => 0, 'nbr' => 1);
+
+        if ($nbreplayers >= 2) {
+            if ($this->getGameStateValue('game_mode') == 2) {
+                $rand1 = bga_rand(1, 10);
+                $this->setGameStateInitialValue('plant_goal', $rand1);
+                $rand2 = bga_rand(1, 10);
+                $this->setGameStateInitialValue('room_goal', $rand2);
+                $rand3 = bga_rand(1, 10);
+                $this->setGameStateInitialValue('item_goal', $rand3);
+            }
+
+            if ($this->getGameStateValue('game_mode') == 3) {
+                $rand1 = bga_rand(1, 13);
+                $this->setGameStateInitialValue('plant_goal', $rand1);
+                $rand2 = bga_rand(1, 13);
+                $this->setGameStateInitialValue('room_goal', $rand2);
+                $rand3 = bga_rand(1, 13);
+                $this->setGameStateInitialValue('item_goal', $rand3);
+            }
         }
 
-        $this->plant->createCards($card, 'deck');
-        $this->plant->shuffle('deck');
+        if ($nbreplayers == 1) {
+            $rand1 = 0;
+            $rand2 = 0;
+            $rand3 = 0;
+            if ($this->getGameStateValue('game_mode') == 2) {
+                while ($rand1 == 0 || $rand1 == 8) {
+                    $rand1 = bga_rand(1, 10);
+                }
+                $this->setGameStateInitialValue('plant_goal', $rand1);
 
-        $this->room->createCards($card, 'deck');
-        $this->room->shuffle('deck');
+                while ($rand2 == 0 || $rand2 == 8) {
+                    $rand2 = bga_rand(1, 10);
+                }
+                $this->setGameStateInitialValue('room_goal', $rand2);
+
+                while ($rand3 == 0 || $rand3 == 7 || $rand3 == 8) {
+                    $rand3 = bga_rand(1, 10);
+                }
+                $this->setGameStateInitialValue('item_goal', $rand3);
+            }
+            if ($this->getGameStateValue('game_mode') == 3) {
+                while ($rand1 == 0 || $rand1 == 8) {
+                    $rand1 = bga_rand(1, 13);
+                }
+                $this->setGameStateInitialValue('plant_goal', $rand1);
+
+                while ($rand2 == 0 || $rand2 == 8) {
+                    $rand2 = bga_rand(1, 13);
+                }
+                $this->setGameStateInitialValue('room_goal', $rand2);
+
+                while ($rand3 == 0 || $rand3 == 7 || $rand3 == 8) {
+                    $rand3 = bga_rand(1, 13);
+                }
+                $this->setGameStateInitialValue('item_goal', $rand3);
+            }
+        }
+
+        /* init Plant et Room */
+
+        if ($this->getGameStateValue('game_mode') != 3) {
+
+            for ($i = 1; $i <= 60; $i++) {
+
+                $card[] = array('type' => $i, 'type_arg' => 0, 'nbr' => 1);
+            }
+
+            $this->plant->createCards($card, 'deck');
+            $this->plant->shuffle('deck');
+
+            $this->room->createCards($card, 'deck');
+            $this->room->shuffle('deck');
+        }
+
+        if ($this->getGameStateValue('game_mode') == 3) {
+
+            for ($i = 1; $i <= 70; $i++) {
+
+                if ($i <= 60) {
+                    $card1[] = array('type' => $i, 'type_arg' => 0, 'nbr' => 1);
+                } else {
+                    $card1[] = array('type' => $i, 'type_arg' => -2, 'nbr' => 1);
+                }
+            }
+
+            for ($i = 1; $i <= 60; $i++) {
+
+                $card2[] = array('type' => $i, 'type_arg' => 0, 'nbr' => 1);
+            }
+
+            $this->plant->createCards($card1, 'deck');
+            $this->plant->shuffle('deck');
+
+            $this->room->createCards($card2, 'deck');
+            $this->room->shuffle('deck');
+        }
+
+
 
         /* init Tile*/
 
@@ -628,7 +707,7 @@ class Game extends \Table
 
     function TestVerdoyance($player_id, $genre, $card_type, $position)
     {
-        $player_name = self::getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id={$player_id}");
+        $player_name = self::getPlayerNameById($player_id);
 
         if ($genre == 'plant') {
             $gain = 0;
@@ -645,20 +724,78 @@ class Game extends \Table
 
 
                     if (($test == $position - 1) && (in_array($conditions_room["east"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 1) && (in_array($conditions_room["west"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 10) && (in_array($conditions_room["north"], $conditions_plant))) {
                         self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position - 10) && (in_array($conditions_room["south"], $conditions_plant))) {
                         self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                 }
             }
@@ -679,7 +816,7 @@ class Game extends \Table
 
                     self::DbQuery("UPDATE pot SET card_location = $player_id, card_location_arg = $card_type WHERE card_id = '{$pot_id}'");
 
-                    self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$card_type}'");
+                    self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$card_type}'");
                 }
 
                 game::$instance->notifyAllPlayers(
@@ -716,22 +853,78 @@ class Game extends \Table
 
 
                     if (($test == $position - 1) && (in_array($conditions_room["west"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 1) && (in_array($conditions_room["east"], $conditions_plant))) {
 
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 10) && (in_array($conditions_room["south"], $conditions_plant))) {
 
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position - 10) && (in_array($conditions_room["north"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
 
                     if ($gain == 1) {
@@ -746,7 +939,7 @@ class Game extends \Table
 
                             self::DbQuery("UPDATE pot SET card_location = $player_id, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
 
-                            self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$type_plant}'");
+                            self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
                         }
 
                         game::$instance->notifyAllPlayers(
@@ -770,7 +963,7 @@ class Game extends \Table
 
     function TestVerdoyanceSolo($player_id, $genre, $card_type, $position)
     {
-        $player_name = self::getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id={$player_id}");
+        $player_name = self::getPlayerNameById($player_id);
 
         if ($genre == 'plant') {
             $gain = 0;
@@ -787,20 +980,76 @@ class Game extends \Table
 
 
                     if (($test == $position - 1) && (in_array($conditions_room["east"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 1) && (in_array($conditions_room["west"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 10) && (in_array($conditions_room["north"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position - 10) && (in_array($conditions_room["south"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
-                        $gain++;
+                        if ($card_type <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
+                            $gain++;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                 }
             }
@@ -820,19 +1069,25 @@ class Game extends \Table
 
                     $delta = $max_verdoiement - $before_verdoiement;
 
-                    if ($nbre_pot_market == 4) {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                        $pot_origin = 'market_pot_4';
+                    if (game::$instance->getGameStateValue('last_turn') != 1) {
+                        if ($nbre_pot_market == 4) {
+                            $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                            $pot_origin = 'market_cell_15';
+                        } else {
+                            $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
+                            $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                            $pot_origin = 'pot_discard_' . $valeur_pot;
+                        }
                     } else {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $pot_origin = 'pot_discard_' . $pot_id;
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $pot_origin = 'pot_deck_0';
                     }
 
                     $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
 
                     self::DbQuery("UPDATE pot SET card_location = $player_id, card_location_arg = $card_type WHERE card_id = '{$pot_id}'");
 
-                    self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$card_type}'");
+                    self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$card_type}'");
                 }
 
                 game::$instance->notifyAllPlayers(
@@ -870,22 +1125,78 @@ class Game extends \Table
 
 
                     if (($test == $position - 1) && (in_array($conditions_room["west"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 1) && (in_array($conditions_room["east"], $conditions_plant))) {
 
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position + 10) && (in_array($conditions_room["south"], $conditions_plant))) {
 
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
                     if (($test == $position - 10) && (in_array($conditions_room["north"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $gain = 1;
+                        if ($type_plant <= 60) {
+                            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                            $gain = 1;
+                        } else {
+                            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
+                            game::$instance->notifyAllPlayers(
+                                'addGreenThumbs',
+                                '',
+                                array(
+                                    'player_id' => $player_id,
+                                    'nb_thumbs' => 1,
+
+
+                                )
+                            );
+                        }
                     }
 
                     if ($gain == 1) {
@@ -900,21 +1211,27 @@ class Game extends \Table
                             $valeur_pot = -1;
                         } else {
 
-                            $delta = $max_verdoiement - $before_verdoiement;
 
-                            if ($nbre_pot_market == 4) {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                                $pot_origin = 'market_pot_4';
+                            if (game::$instance->getGameStateValue('last_turn') != 1) {
+                                if ($nbre_pot_market == 4) {
+                                    $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                                    $pot_origin = 'market_cell_15';
+                                } else {
+                                    $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
+                                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                    $pot_origin = 'pot_discard_' . $valeur_pot;
+                                }
                             } else {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                                $pot_origin = 'pot_discard_' . $pot_id;
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                                $pot_origin = 'pot_deck_0';
                             }
+
 
                             $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
 
                             self::DbQuery("UPDATE pot SET card_location = $player_id, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
 
-                            self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$type_plant}'");
+                            self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
                         }
 
                         game::$instance->notifyAllPlayers(
@@ -952,6 +1269,7 @@ class Game extends \Table
             $final_scores[$player]['furniture_pets'] = 0;
             $final_scores[$player]['plant_collector_bonus'] = 0;
             $final_scores[$player]['room_collector_bonus'] = 0;
+            $final_scores[$player]['total'] = 0;
         }
 
 
@@ -964,16 +1282,26 @@ class Game extends \Table
 
         foreach ($plants as $plant) {
             $player_id = $plant['location'];
-            $verdancy = $plant['type_arg'];
+
 
             $plant_infos = $this->_PLANT_CARDS[$plant['type']];
 
-            $max_verdancy = $plant_infos['verdancy'];
 
-            if ($max_verdancy == $verdancy) {
-                $final_scores[$player_id]['completed_plants'] += $plant_infos['points'];
-            } else {
-                $final_scores[$player_id]['extra_verdancy'] += $verdancy;
+            if ($plant['type_arg'] == -1) {
+                foreach ($pots as $pot) {
+                    if ($pot['location_arg'] == $plant['type']) {
+                        $final_scores[$player_id]['completed_plants'] += $plant_infos['points'];
+                    }
+                }
+            }
+
+            if ($plant['type_arg'] == -2) {
+
+                $final_scores[$player_id]['completed_plants'] += 2;
+            }
+
+            if ($plant['type_arg'] >= 1) {
+                $final_scores[$player_id]['extra_verdancy'] += $plant['type_arg'];
             }
         }
 
@@ -996,14 +1324,12 @@ class Game extends \Table
 
         // room bonus (same color adjacent + x2 if same colored item)
 
+        $scores_rooms = []; //     // pour objectif room 13
         foreach ($rooms as $room) {
             $player_id = $room['location'];
             $type = $room['type'];
             $room_infos = $this->_ROOM_CARDS[$room['type']];
             $position = intval($room['location_arg']);
-
-            $score_room = 0;    // pour objectif room 13
-            $scores_rooms = array(); // pour objectif room 13
 
             $double = false;
 
@@ -1021,37 +1347,13 @@ class Game extends \Table
                 $plant_type = self::getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location='{$player_id}' AND card_location_arg = '{$test}'");
                 if ($plant_type != null) {
                     if ($this->_PLANT_CARDS[$plant_type]['type'] == $room_infos['type']) {
-                        if ($double == false) {
-                            $final_scores[$player_id]['room_bonus'] += 1;
-                            $score_room += 1; // pour objectif room 13
-                        }
-
-                        if ($double == true) {
-                            $final_scores[$player_id]['room_bonus'] += 2;
-                            $score_room += 2; // pour objectif room 13
-                        }
+                        $bonus = $double ? 2 : 1;
+                        $final_scores[$player_id]['room_bonus'] = ($final_scores[$player_id]['room_bonus'] ?? 0) + $bonus;
                     }
                 }
             }
-
-
-            $scores_rooms[$player_id][] = $score_room; // pour objectif room 13
-
         }
 
-        // pour objectif room 13
-        if (($this->getGameStateValue('game_mode') == 2) && ($this->getGameStateValue('room_goal') == 13)) {
-            foreach ($players as $player) {
-                $max = max($scores_rooms[$player]);
-                $somme = 0;
-
-                foreach ($scores_rooms[$player] as $valeur) {
-                    $somme += $valeur;
-                }
-
-                $final_scores[$player]['room_bonus'] = $somme + $max;
-            }
-        }
 
 
 
@@ -1149,6 +1451,13 @@ class Game extends \Table
         /// MODE AVANCE ////
 
         if ($this->getGameStateValue('game_mode') == 2) {
+
+            foreach ($players as $player) {
+                $final_scores[$player]['plant_goal'] = 0;
+                $final_scores[$player]['item_goal'] = 0;
+                $final_scores[$player]['room_goal'] = 0;
+            }
+
             // plant goal
             $result_plant_goal = $this->getPlantGoalBonus($this->getGameStateValue('plant_goal'));
 
@@ -1169,6 +1478,13 @@ class Game extends \Table
             }
         }
 
+        foreach ($players as $player) {
+            $total = array_sum($final_scores[$player]);
+            $final_scores[$player]['total'] = $total;
+            $score_aux = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id = '{$player}'");
+            self::DbQuery("UPDATE player set player_score = $total WHERE player_id = '{$player}'");
+            self::DbQuery("UPDATE player set player_score_aux = $score_aux WHERE player_id = '{$player}'");
+        }
 
         game::$instance->notifyAllPlayers(
             'showFinalScores',
@@ -1192,7 +1508,7 @@ class Game extends \Table
             $pots = self::getPlayersPots();
 
             foreach ($pots as $pot) {
-                if ($this->_PLANT_CARDS[$pot['plant_type']]['verdancy'] <= 4) {
+                if ($this->_PLANT_CARDS[$pot['plant_type']]['verdancy'] > 0 && $this->_PLANT_CARDS[$pot['plant_type']]['verdancy'] <= 4) {
                     $plant_goal_bonus[$pot['player_id']] += 2;
                 }
             }
@@ -1209,7 +1525,7 @@ class Game extends \Table
         {
             $players_match = self::getCollectionFromDB("
                 SELECT card_location AS player_id, COUNT(*) AS pot_count 
-                FROM plant WHERE card_location NOT IN ('deck', 'market') and card_type_arg <= 2
+                FROM plant WHERE card_location NOT IN ('deck', 'market') and card_type_arg >=0 and card_type_arg <= 2
                 GROUP BY card_location
             ", true);
             foreach ($player_ids as $player_id) {
@@ -1228,7 +1544,7 @@ class Game extends \Table
                 $row = floor($plant['coord'] / 10); // On regroupe par ligne
 
                 // Récupération du vrai type de plante depuis $this->_PLANT_CARDS
-                $plant_color = $this->_PLANT_CARDS[$plant['type']]['type'];
+                $plant_color = $this->_PLANT_CARDS[$plant['card_type']]['type'];
 
                 // Ajoute la plante à la ligne correspondante du joueur
                 $rows[$player_id][$row][] = $plant_color;
@@ -1312,6 +1628,7 @@ class Game extends \Table
 
                 // Vérifier chaque room adjacente
                 foreach ($tests as $test) {
+                    // Récupérer le type de la room adjacente
                     $type_room = self::getUniqueValueFromDB("SELECT card_type FROM room WHERE card_location='{$plant['player_id']}' AND card_location_arg = '{$test}'");
 
                     // Si la room existe (pas nulle)
@@ -1320,7 +1637,6 @@ class Game extends \Table
                         $conditions_room = $this->_ROOM_CARDS[$type_room]['lightning'];
 
                         // Vérifier si la room adjacente a un lightning favorable pour la plante
-                        // Si l'une des rooms ne correspond pas aux conditions, on annule le gain
                         if ($test == $position - 1 && !in_array($conditions_room["east"], $conditions_plant)) {
                             $gain = false;
                             break;
@@ -1406,7 +1722,9 @@ class Game extends \Table
                 }
 
                 // Ajouter le verdancy à la liste des verdancies uniques pour ce joueur
-                $player_verdancy[$player_id][$verdancy] = true;
+                if ($verdancy > 0) {
+                    $player_verdancy[$player_id][$verdancy] = true;
+                }
             }
 
             // 4. Calculer les points pour chaque joueur en fonction des verdancy distincts
@@ -1420,51 +1738,49 @@ class Game extends \Table
         } else if ($type == 10) // Against all Odds
         {
             $plants = self::getPlayersPlants();
+            $rooms = self::getPlayersRooms();  // Récupérer toutes les rooms d'un coup
 
-            // Remplir les types possédés par chaque joueur
+            // Organiser les rooms par joueur et position
+            $rooms_by_position = [];
+            foreach ($rooms as $room) {
+                $rooms_by_position[$room['player_id']][$room['coord']] = $room['card_type'];
+            }
+
+            // Vérifier chaque plante
             foreach ($plants as $plant) {
-                $gain = true;  // Initialiser à true, et le rendre false si une condition échoue
-                $has_favorable_lightning = false;  // Variable pour vérifier si au moins une room satisfait les conditions
+                $player_id = $plant['player_id'];
+                $card_type = $plant['card_type'];
+                $position = $plant['coord'];
 
-                $card_type = $plant['card_type'];  // Définir le type de plante
-                $conditions_plant = $this->_PLANT_CARDS[$card_type]['lightning'];  // Conditions de lightning de la plante
-                $position = $plant['coord'];  // Position de la plante
+                $conditions_plant = $this->_PLANT_CARDS[$card_type]['lightning']; // Conditions de lightning de la plante
 
-                // Définir les positions des rooms adjacentes (gauche, droite, haut, bas)
-                $tests = [$position - 1, $position + 1, $position - 10, $position + 10];
+                // Définir les positions adjacentes (gauche, droite, haut, bas)
+                $adjacent_positions = [
+                    'east'  => $position - 1,
+                    'west'  => $position + 1,
+                    'north' => $position + 10,
+                    'south' => $position - 10
+                ];
 
-                // Vérifier chaque room adjacente
-                foreach ($tests as $test) {
-                    $type_room = self::getUniqueValueFromDB("SELECT card_type FROM room WHERE card_location='{$plant['player_id']}' AND card_location_arg = '{$test}'");
+                $has_favorable_lightning = false;
 
-                    // Si la room existe (pas nulle)
-                    if ($type_room != null) {
-                        // Récupérer les conditions de lightning de la room
-                        $conditions_room = $this->_ROOM_CARDS[$type_room]['lightning'];
+                // Vérifier les rooms adjacentes
+                foreach ($adjacent_positions as $direction => $test_position) {
+                    if (isset($rooms_by_position[$player_id][$test_position])) {
+                        $room_type = $rooms_by_position[$player_id][$test_position];
+                        $conditions_room = $this->_ROOM_CARDS[$room_type]['lightning'];
 
                         // Vérifier si la room adjacente a un lightning favorable pour la plante
-                        if ($test == $position - 1 && in_array($conditions_room["east"], $conditions_plant)) {
+                        if (isset($conditions_room[$direction]) && in_array($conditions_room[$direction], $conditions_plant)) {
                             $has_favorable_lightning = true;
-                            break;  // Quitter la boucle dès qu'un lightning favorable est trouvé
-                        }
-                        if ($test == $position + 1 && in_array($conditions_room["west"], $conditions_plant)) {
-                            $has_favorable_lightning = true;
-                            break;  // Quitter la boucle dès qu'un lightning favorable est trouvé
-                        }
-                        if ($test == $position + 10 && in_array($conditions_room["north"], $conditions_plant)) {
-                            $has_favorable_lightning = true;
-                            break;  // Quitter la boucle dès qu'un lightning favorable est trouvé
-                        }
-                        if ($test == $position - 10 && in_array($conditions_room["south"], $conditions_plant)) {
-                            $has_favorable_lightning = true;
-                            break;  // Quitter la boucle dès qu'un lightning favorable est trouvé
+                            break; // Stop dès qu'une room valide est trouvée
                         }
                     }
                 }
 
                 // Si aucune room adjacente n'a un lightning favorable, on attribue 2 points
                 if (!$has_favorable_lightning) {
-                    $plant_goal_bonus[$plant['player_id']] += 2;
+                    $plant_goal_bonus[$player_id] += 2;
                 }
             }
         } else if ($type == 11) // Loved lines
@@ -1514,8 +1830,8 @@ class Game extends \Table
                 $card_type = $plant['card_type'];
                 $conditions_plant = $this->_PLANT_CARDS[$card_type]['lightning'];  // Récupérer les conditions de lightning de la plante
 
-                // Vérifier si la plante n'a qu'un seul lightning préféré
-                if (count($conditions_plant) == 1) {
+                // Vérifier si la plante n'a qu'un seul lightning préféré et un pot
+                if (count($conditions_plant) == 1 && $plant['card_type_arg'] == -1) {
                     // Si la plante a un seul lightning préféré et est complétée, on attribue 1 point
                     $plant_goal_bonus[$plant['player_id']] += 1;
                 }
@@ -1781,46 +2097,43 @@ class Game extends \Table
                     $item_goal_bonus[$item['player_id']] += 4;
                 }
             }
-        }
-        if ($type == 10) // Clear the Way 
+        } else if ($type == 10) // Clear the Way
         {
             $rooms = self::getPlayersRooms();
-
             $items = self::getPlayersItems();
 
-            // 2. Organiser les items par room
+            // Organiser les items par position de room
             $items_by_room = [];
-
-            // Remplir le tableau avec les items par position de room
             foreach ($items as $item) {
-                $items_by_room[$item['room_type']] = $item; // Un seul item par room, donc on écrase l'élément si nécessaire
+                $items_by_room[$item['room_type']] = true; // Indiquer qu'un item est présent
             }
 
-            // 3. Organiser les rooms par ligne
+            // Organiser les rooms par ligne et par joueur
             $rooms_by_line = [];
-
-            // Remplir le tableau avec les rooms par ligne et par joueur
             foreach ($rooms as $room) {
-                $row = floor($room['coord'] / 10); // Calculer la ligne
-                $rooms_by_line[$row][$room['player_id']][] = $room['coord'];
+                $row = floor($room['coord'] / 10);
+                $rooms_by_line[$room['player_id']][$row][] = $room['card_type'];
             }
 
-            // 4. Vérifier chaque ligne pour voir si toutes les rooms sont vides
-            foreach ($rooms_by_line as $row => $player_rooms) {
-                foreach ($player_rooms as $player_id => $room_coords) {
-                    $is_empty_line = true; // Supposer que la ligne est vide
+            // Vérifier chaque ligne pour chaque joueur séparément
+            foreach ($rooms_by_line as $player_id => $lines) {
+                foreach ($lines as $row => $room_coords) {
+                    $is_empty_line = true; // On suppose que la ligne est vide
 
-                    // Vérifier si une des rooms de la ligne contient un item
+                    // Vérifier si une des rooms contient un item
                     foreach ($room_coords as $coord) {
                         if (isset($items_by_room[$coord])) {
-                            $is_empty_line = false; // La ligne n'est pas vide, car un item a été trouvé
+                            $is_empty_line = false;
                             break;
                         }
                     }
 
-                    // Si toutes les rooms de la ligne sont vides, ajouter 1 point
+                    // Si toutes les rooms de la ligne sont vides, attribuer 1 point
                     if ($is_empty_line) {
-                        $item_goal_bonus[$player_id] += 1;
+                        if (!isset($item_goal_bonus[$player_id])) {
+                            $item_goal_bonus[$player_id] = 0;
+                        }
+                        $item_goal_bonus[$player_id] += 4;
                     }
                 }
             }
@@ -1836,12 +2149,14 @@ class Game extends \Table
             // Compter le nombre d’items de chaque type pour chaque joueur
             foreach ($items as $item) {
                 $player_id = $item['player_id'];
-                $type = floor($item['card_type'] / 10);
+                if ($item['card_type'] < 60) {
 
-                if (!isset($item_counts[$player_id][$type])) {
-                    $item_counts[$player_id][$type] = 0;
+                    $type = $item['card_type'] % 10;
+                    if (!isset($item_counts[$player_id][$type])) {
+                        $item_counts[$player_id][$type] = 0;
+                    }
+                    $item_counts[$player_id][$type]++;
                 }
-                $item_counts[$player_id][$type]++;
             }
 
             // Vérifier si un joueur a au moins 3 items du même type
@@ -1853,85 +2168,79 @@ class Game extends \Table
                 }
             }
         }
-        if ($type == 12) // Nobody to impress 
+        if ($type == 12) // Nobody to impress
         {
-            // 1. Récupérer les rooms et les items associés aux joueurs
+            // 1. Récupérer les rooms, items et plantes associées aux joueurs
             $rooms = self::getPlayersRooms();
-
             $items = self::getPlayersItems();
-
-            // 2. Organiser les items par room
-            $items_by_room = [];
-
-            // Remplir le tableau avec les items par position de room
-            foreach ($items as $item) {
-                $items_by_room[$item['room_type']] = $item; // Un seul item par room
-            }
-
-            // 3. Récupérer les plantes et leurs positions
             $plants = self::getPlayersPlants();
 
-            // 4. Organiser les plantes par position
-            $plants_by_coord = [];
+            // 2. Trier les données par joueur
+            $rooms_by_player = [];
+            $items_by_player = [];
+            $plants_by_player = [];
 
-            foreach ($plants as $plant) {
-                $plants_by_coord[$plant['coord']] = $plant; // Associer la plante à sa position
+            foreach ($rooms as $room) {
+                $rooms_by_player[$room['player_id']][$room['coord']] = $room['card_type'];
             }
 
-            // 5. Vérifier les rooms et les plantes adjacentes
-            foreach ($rooms as $room) {
-                $player_id = $room['player_id'];
-                $room_color = $this->_ROOM_CARDS[$room['card_type']]['type']; // Type de la room
-                $room_coord = $room['coord'];
+            foreach ($items as $item) {
+                $items_by_player[$item['player_id']][$item['room_type']] = $item['card_type'];
+            }
 
-                // Vérifier si la room contient un item de la même couleur
-                if (isset($items_by_room[$room_coord])) {
-                    $item_color = $this->_ITEM_CARDS[$items_by_room[$room_coord]['card_type']]['type']; // Type de l'item dans la room
+            foreach ($plants as $plant) {
+                $plants_by_player[$plant['player_id']][$plant['coord']] = $plant['card_type'];
+            }
 
-                    // Vérifier si l'item dans la room a la même couleur que la room
-                    if ($room_color === $item_color) {
-                        // Calculer les positions adjacentes de la room
-                        $adjacent_coords = [
-                            $room_coord - 1,
-                            $room_coord + 1,  // Positions à gauche et à droite
-                            $room_coord - 10,
-                            $room_coord + 10 // Positions au-dessus et en dessous
-                        ];
 
-                        $has_adjacent_plant_of_same_color = false;
+            // 3. Vérifier joueur par joueur
+            foreach ($rooms_by_player as $player_id => $rooms) {
+                foreach ($rooms as $room_coord => $room_card_type) {
+                    $room_color = $this->_ROOM_CARDS[$room_card_type]['type'];
 
-                        // Vérifier si une plante adjacente a la même couleur que l'item
-                        foreach ($adjacent_coords as $adjacent_coord) {
-                            if (isset($plants_by_coord[$adjacent_coord])) {
-                                $plant = $plants_by_coord[$adjacent_coord];
-                                $plant_color = $this->_PLANT_CARDS[$plant['card_type']]['type']; // Type de la plante
 
-                                // Si la plante adjacente a la même couleur que l'item, marquer comme trouvé
-                                if ($plant_color === $item_color) {
-                                    $has_adjacent_plant_of_same_color = true;
-                                    break; // Pas besoin de vérifier plus
+                    // Vérifier si la room contient un item de la même couleur
+                    if (isset($items_by_player[$player_id][$room_card_type])) {
+                        $item_color = floor($items_by_player[$player_id][$room_card_type] / 10); // Type de l'item dans la room
+
+                        if ($room_color == $item_color) {
+                            // Calculer les positions adjacentes
+
+                            $adjacent_coords = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
+
+                            $has_adjacent_plant_of_same_color = false;
+
+                            foreach ($adjacent_coords as $adjacent_coord) {
+                                if (isset($plants_by_player[$player_id][$adjacent_coord])) {
+                                    $plant_color = $this->_PLANT_CARDS[$plants_by_player[$player_id][$adjacent_coord]]['type'];
+
+                                    if ($plant_color == $item_color) {
+                                        $has_adjacent_plant_of_same_color = true;
+                                        break;
+                                    }
                                 }
                             }
-                        }
 
-                        // Si la room contient un item de la même couleur et n'a aucune plante adjacente de la même couleur, ajouter 3 points
-                        if (!$has_adjacent_plant_of_same_color) {
-                            $item_goal_bonus[$player_id] += 3;
+                            // Si aucune plante adjacente de même couleur, ajouter 3 points
+                            if (!$has_adjacent_plant_of_same_color) {
+                                $item_goal_bonus[$player_id] = ($item_goal_bonus[$player_id] ?? 0) + 3;
+                            }
                         }
                     }
                 }
             }
         }
+
         if ($type == 13) // Implement of Choice
         {
             // utiliser les stats pour trouver celui qui est le plus utilisé
             $player_ids =  array_keys($this->loadPlayersBasicInfos());
             foreach ($player_ids as $player_id) {
-                $bonus = max(
+                $bonus = max([
                     $this->getStat('fertilizer_used', $player_id),
-                    $this->getStat('hand_trowel', $player_id),
-                    $this->getStat('watering_can', $player_id)
-                );
+                    $this->getStat('hand_trowel_used', $player_id),
+                    $this->getStat('watering_can_used', $player_id)
+                ]);
                 $item_goal_bonus[$player_id] = $bonus;
             }
         }
@@ -1990,47 +2299,50 @@ class Game extends \Table
                 }
             }
         }
-        if ($type == 3) // Double Duty 
-        {
+        if ($type == 3) { // Double Duty  
             $plants = self::getPlayersPlants();
+            $rooms = self::getPlayersRooms();
 
-            // 2. Organiser les plantes par leur position (coord)
-            $plants_by_position = [];
+            // Organiser les plantes par joueur et par position
+            $plants_by_player = [];
             foreach ($plants as $plant) {
-                $plants_by_position[$plant['coord']] = [
-                    'player_id' => $plant['player_id'],
+                $player_id = $plant['player_id'];
+                $plants_by_player[$player_id][$plant['coord']] = [
                     'card_type' => $plant['card_type'],
                     'coord' => $plant['coord']
                 ];
             }
 
-            $rooms = self::getPlayersRooms();
-
-            // Initialiser un tableau pour stocker les points des rooms
-            $room_goal_bonus = [];
-
+            // Organiser les rooms par joueur
+            $rooms_by_player = [];
             foreach ($rooms as $room) {
-                $room_coord = $room['coord'];
-                $room_color = $this->_ROOM_CARDS[$room['card_type']]['type']; // Obtenir la couleur de la room
-                $adjacent_plants = 0;
+                $rooms_by_player[$room['player_id']][] = $room;
+            }
 
-                // 4. Vérifier les positions adjacentes de la room
-                $tests = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
+            // Vérifier chaque maison (par joueur)
+            foreach ($rooms_by_player as $player_id => $player_rooms) {
+                foreach ($player_rooms as $room) {
+                    $room_coord = $room['coord'];
+                    $room_color = $this->_ROOM_CARDS[$room['card_type']]['type']; // Obtenir la couleur de la room
+                    $adjacent_plants = 0;
 
-                // Compter les plantes adjacentes de la même couleur
-                foreach ($tests as $test_position) {
-                    if (isset($plants_by_position[$test_position])) {
-                        $adjacent_plant = $plants_by_position[$test_position];
-                        $plant_color = $this->_PLANT_CARDS[$adjacent_plant['card_type']]['type']; // Couleur de la plante
-                        if ($plant_color == $room_color) {
-                            $adjacent_plants++;
+                    // Vérifier les positions adjacentes
+                    $tests = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
+
+                    foreach ($tests as $test_position) {
+                        if (isset($plants_by_player[$player_id][$test_position])) {
+                            $adjacent_plant = $plants_by_player[$player_id][$test_position];
+                            $plant_color = $this->_PLANT_CARDS[$adjacent_plant['card_type']]['type']; // Couleur de la plante
+
+                            if ($plant_color == $room_color) {
+                                $adjacent_plants++;
+                            }
                         }
                     }
-                }
-
-                // 5. Si deux ou plus de plantes adjacentes sont de la même couleur, attribuer un point à la room
-                if ($adjacent_plants >= 2) {
-                    $room_goal_bonus[$room['player_id']] += 1;
+                    // Si deux ou plus de plantes adjacentes sont de la même couleur, attribuer un point
+                    if ($adjacent_plants >= 2) {
+                        $room_goal_bonus[$player_id] += 1;
+                    }
                 }
             }
         }
@@ -2108,70 +2420,67 @@ class Game extends \Table
                 }
             }
         }
-        if ($type == 7) // Perfect Ambiance 
+        if ($type == 7) // Perfect Ambiance
         {
             $rooms = self::getPlayersRooms();
-
             $plants = self::getPlayersPlants();
 
-            // Organiser les plantes par position pour une recherche rapide
-            $plants_by_position = [];
+            // Organiser les rooms et plantes par joueur
+            $rooms_by_player = [];
+            $plants_by_player = [];
 
+            foreach ($rooms as $room) {
+                $rooms_by_player[$room['player_id']][] = $room;
+            }
             foreach ($plants as $plant) {
-                $plants_by_position[$plant['position']] = $plant;  // Associer chaque plante à sa position
+                $plants_by_player[$plant['player_id']][$plant['coord']] = $plant;
             }
 
-            // 3. Vérifier les rooms et leurs conditions de lightning
-            foreach ($rooms as $room) {
-                $room_position = $room['position'];
-                $room_type = $room['card_type'];  // Type de la room
-                $room_conditions = $this->_ROOM_CARDS[$room_type]['lightning'];  // Conditions de lightning de la room
+            // Vérifier les conditions de chaque room par joueur
+            foreach ($rooms_by_player as $player_id => $player_rooms) {
+                foreach ($player_rooms as $room) {
+                    $room_position = $room['coord'];
+                    $room_type = $room['card_type'];
+                    $room_conditions = $this->_ROOM_CARDS[$room_type]['lightning'];
 
-                // Définir les positions adjacentes de la room (gauche, droite, haut, bas)
-                $adjacent_positions = [
-                    $room_position - 1,  // Position à gauche
-                    $room_position + 1,  // Position à droite
-                    $room_position - 10, // Position au-dessus
-                    $room_position + 10  // Position en dessous
-                ];
+                    $adjacent_positions = [
+                        $room_position - 1,
+                        $room_position + 1,
+                        $room_position - 10,
+                        $room_position + 10
+                    ];
 
-                $gain = true;  // Initialiser à true, et le rendre false si une condition échoue
+                    $gain = true;
 
-                // Vérifier les plantes adjacentes
-                foreach ($adjacent_positions as $adjacent_position) {
-                    // Si une plante existe à cette position
-                    if (isset($plants_by_position[$adjacent_position])) {
-                        $plant = $plants_by_position[$adjacent_position];
-                        $plant_type = $plant['card_type'];  // Type de la plante
-                        $plant_conditions = $this->_PLANT_CARDS[$plant_type]['lightning'];  // Conditions de lightning de la plante
+                    // Vérifier les plantes adjacentes (du même joueur)
+                    foreach ($adjacent_positions as $adjacent_position) {
+                        if (isset($plants_by_player[$player_id][$adjacent_position])) {
+                            $plant = $plants_by_player[$player_id][$adjacent_position];
+                            $plant_type = $plant['card_type'];
+                            $plant_conditions = $this->_PLANT_CARDS[$plant_type]['lightning'];
 
-                        // Vérifier si les conditions de lightning de la room correspondent à la plante adjacente
-                        // Comparer les conditions pour chaque direction (est, ouest, nord, sud)
-                        if ($adjacent_position == $room_position - 1 && !in_array($room_conditions["east"], $plant_conditions)) {
-                            $gain = false;
-                            break;
-                        }
-                        if ($adjacent_position == $room_position + 1 && !in_array($room_conditions["west"], $plant_conditions)) {
-                            $gain = false;
-                            break;
-                        }
-                        if ($adjacent_position == $room_position + 10 && !in_array($room_conditions["north"], $plant_conditions)) {
-                            $gain = false;
-                            break;
-                        }
-                        if ($adjacent_position == $room_position - 10 && !in_array($room_conditions["south"], $plant_conditions)) {
-                            $gain = false;
-                            break;
+                            if ($adjacent_position == $room_position - 1 && !in_array($room_conditions["west"], $plant_conditions)) {
+                                $gain = false;
+                                break;
+                            }
+                            if ($adjacent_position == $room_position + 1 && !in_array($room_conditions["east"], $plant_conditions)) {
+                                $gain = false;
+                                break;
+                            }
+                            if ($adjacent_position == $room_position + 10 && !in_array($room_conditions["south"], $plant_conditions)) {
+                                $gain = false;
+                                break;
+                            }
+                            if ($adjacent_position == $room_position - 10 && !in_array($room_conditions["north"], $plant_conditions)) {
+                                $gain = false;
+                                break;
+                            }
                         }
                     }
-                }
 
-                // Si toutes les conditions sont remplies, attribuer un point à la room
-                if ($gain) {
-                    if (!isset($room_goal_bonus[$room['player_id']])) {
-                        $room_goal_bonus[$room['player_id']] = 0;
+                    if ($gain) {
+                        $room_goal_bonus[$player_id] += 1;
                     }
-                    $room_goal_bonus[$room['player_id']] += 1;
                 }
             }
         }
@@ -2217,81 +2526,143 @@ class Game extends \Table
                 }
             }
         }
-        if ($type == 9) // Chaotic Coordinator 
+        if ($type == 9) // Chaotic Coordinator
         {
             $plants = self::getPlayersPlants();
-
-            // 2. Organiser les plantes par leur position (coord)
-            $plants_by_position = [];
-            foreach ($plants as $plant) {
-                $plants_by_position[$plant['coord']] = [
-                    'player_id' => $plant['player_id'],
-                    'card_type' => $plant['card_type'],
-                    'coord' => $plant['coord']
-                ];
-            }
-
             $rooms = self::getPlayersRooms();
 
-            // Initialiser un tableau pour stocker les points des rooms
-            $room_goal_bonus = [];
+            // Organiser les plantes et les rooms par joueur
+            $plants_by_player = [];
+            $rooms_by_player = [];
+
+            foreach ($plants as $plant) {
+                $plants_by_player[$plant['player_id']][$plant['coord']] = $plant;
+            }
 
             foreach ($rooms as $room) {
-                $room_coord = $room['coord'];
-                $room_color = $this->_ROOM_CARDS[$room['card_type']]['type']; // Obtenir la couleur de la room
-                $adjacent_plants = 0;
+                $rooms_by_player[$room['player_id']][] = $room;
+            }
 
-                // 4. Vérifier les positions adjacentes de la room
-                $tests = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
+            // Vérifier chaque room par joueur
+            foreach ($rooms_by_player as $player_id => $player_rooms) {
+                foreach ($player_rooms as $room) {
+                    $room_coord = $room['coord'];
+                    $room_color = $this->_ROOM_CARDS[$room['card_type']]['type']; // Obtenir la couleur de la room
+                    $adjacent_plants = 0;
 
-                // Vérifier si une plante adjacente a la même couleur
-                foreach ($tests as $test_position) {
-                    if (isset($plants_by_position[$test_position])) {
-                        $adjacent_plant = $plants_by_position[$test_position];
-                        $plant_color = $this->_PLANT_CARDS[$adjacent_plant['card_type']]['type']; // Couleur de la plante
-                        if ($plant_color == $room_color) {
-                            $adjacent_plants++;
-                            break; // Si on trouve une plante adjacente de la même couleur, on arrête la recherche
+                    // Vérifier les positions adjacentes de la room
+                    $adjacent_positions = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
+
+                    // Vérifier si une plante adjacente a la même couleur
+                    foreach ($adjacent_positions as $test_position) {
+                        if (isset($plants_by_player[$player_id][$test_position])) {
+                            $adjacent_plant = $plants_by_player[$player_id][$test_position];
+                            $plant_color = $this->_PLANT_CARDS[$adjacent_plant['card_type']]['type']; // Couleur de la plante
+
+
+
+                            if ($plant_color == $room_color) {
+                                $adjacent_plants++;
+                                break; // Si on trouve une plante adjacente de la même couleur, on arrête la recherche
+                            }
+                        }
+                    }
+
+                    // Si aucune plante adjacente n'a la même couleur, attribuer 2 points à la room
+                    if ($adjacent_plants == 0) {
+                        if (!isset($room_goal_bonus[$player_id])) {
+                            $room_goal_bonus[$player_id] = 0;
+                        }
+                        $room_goal_bonus[$player_id] += 2;
+                    }
+                }
+            }
+        }
+        if ($type == 10) // Four Corners
+        {
+            $players = self::getObjectListFromDB("SELECT player_id FROM player", true); // Liste des joueurs [player_id]
+
+            $plants = self::getPlayersPlants(); // Plantes avec leur coordonnée
+
+            $rooms = self::getPlayersRooms(); // Rooms avec leur coordonnée
+
+            // 3. Organiser les rooms et plantes par joueur
+            $rooms_by_player = [];
+            foreach ($rooms as $room) {
+                $rooms_by_player[$room['player_id']][] = $room; // Regrouper les rooms par joueur
+            }
+
+            $plants_by_player = [];
+            foreach ($plants as $plant) {
+                $plants_by_player[$plant['player_id']][$plant['coord']] = $plant; // Regrouper les plantes par joueur
+            }
+
+            // 4. Récupérer les coordonnées des plantes et des rooms pour chaque joueur
+            $player_plants_top_left = self::getCollectionFromDB("
+                SELECT card_location AS player_id, MIN(card_location_arg) AS min_coord
+                FROM plant
+                WHERE card_location NOT IN ('deck', 'market', 'discard')
+                GROUP BY card_location
+            ", true); // true pour obtenir un tableau [player_id => min_coord]
+
+            $player_rooms_top_left = self::getCollectionFromDB("
+                SELECT card_location AS player_id, MIN(card_location_arg) AS min_coord
+                FROM room
+                WHERE card_location NOT IN ('deck', 'market', 'discard')
+                GROUP BY card_location
+            ", true); // true pour obtenir un tableau [player_id => min_coord]
+
+            // 5. Traitement par joueur
+            foreach ($players as $player_id) {
+
+                // Récupérer la coordonnée en haut à gauche de la plante du joueur
+                $plant_top_left = $player_plants_top_left[$player_id];
+
+                // Récupérer la coordonnée en haut à gauche de la room du joueur
+                $room_top_left = $player_rooms_top_left[$player_id];
+
+                // Si la coordonnée de la room est plus petite que celle de la plante, c'est la room en haut à gauche
+                if ($room_top_left < $plant_top_left) {
+                    // Calculer les 4 coins de la room en fonction de la coordonnée en haut à gauche
+                    $corners = [
+                        $room_top_left,      // Coin supérieur gauche
+                        $room_top_left + 4,  // Coin supérieur droit
+                        $room_top_left + 20, // Coin inférieur gauche
+                        $room_top_left + 24  // Coin inférieur droit
+                    ];
+
+
+                    // 6. Récupérer les types des rooms pour ces 4 coins
+                    $corner_types = [];
+
+                    // Filtrer les rooms du joueur pour ces coins spécifiques
+                    $player_rooms = $rooms_by_player[$player_id]; // On récupère seulement les rooms du joueur
+
+
+                    foreach ($corners as $corner) {
+                        // Chercher la room correspondant à chaque coin, en filtrant par joueur
+                        $room = current(array_filter($player_rooms, function ($room) use ($corner) {
+                            return $room['coord'] == $corner;
+                        }));
+
+                        if ($room) {
+                            // Ajouter le type de la room à la liste des types
+                            $room_color = $this->_ROOM_CARDS[$room['card_type']]['type'];
+                            $corner_types[] = $room_color; // Utilisation de 'card_type' comme dans ton code initial
+                        }
+                    }
+
+                    // 7. Vérifier si toutes les couleurs sont identiques ou toutes différentes
+                    if (count($corner_types) == 4) {
+                        if (count(array_unique($corner_types)) == 1 || count(array_unique($corner_types)) == 4) {
+                            // Si toutes les couleurs sont identiques ou toutes différentes, on attribue le bonus
+                            $room_goal_bonus[$player_id] += 4;
                         }
                     }
                 }
-
-                // 5. Si aucune plante adjacente n'a la même couleur, attribuer 2 points à la room
-                if ($adjacent_plants == 0) {
-                    $room_goal_bonus[$room['player_id']] += 2;
-                }
             }
         }
-        if ($type == 10) // Four Corners 
-        {
-            // 1. Récupérer les cartes des joueurs aux positions 11, 15, 31, et 35
-            $rooms = self::getObjectListFromDB("
-                SELECT card_location AS player_id, card_type, card_location_arg AS coord
-                FROM room
-                WHERE card_location NOT IN ('deck', 'market')
-                AND card_location_arg IN (11, 15, 31, 35)
-            ");
 
-            // 2. Organiser les cartes par joueur
-            $player_room_types = [];
-
-            // 3. Remplir le tableau avec les types de rooms pour chaque joueur
-            foreach ($rooms as $room) {
-                $player_room_types[$room['player_id']][] = $this->_ROOM_CARDS[$room['card_type']]['type'];
-            }
-
-            // 4. Vérifier que chaque joueur a bien 4 cartes et attribuer les points si les conditions sont remplies
-            foreach ($player_room_types as $player_id => $room_types) {
-                // Vérifier que le joueur possède bien 4 cartes aux positions spécifiées
-                if (count($room_types) == 4) {
-
-                    // Vérifier si toutes les rooms du joueur sont du même type ou de types différents
-                    if (count(array_unique($room_types)) == 1 || count(array_unique($room_types)) == 4) {
-                        $room_goal_bonus[$player_id] += 4;
-                    }
-                }
-            }
-        }
         if ($type == 11) // Balancing Act 
         {
             // 1. Récupérer les rooms et les plantes associées aux joueurs
@@ -2353,62 +2724,84 @@ class Game extends \Table
                 }
             }
         }
-        if ($type == 12) // Match Three 
+        if ($type == 12) // Match Three
         {
             // 1. Récupérer les rooms et les plantes associées aux joueurs
             $rooms = self::getPlayersRooms();
-
             $plants = self::getPlayersPlants();
 
-            // 2. Organiser les plantes par joueur et par position
-            $player_plants = [];
+            // 2. Trier les données par joueur
+            $rooms_by_player = [];
+            $plants_by_player = [];
 
-            // Remplir le tableau avec les plantes par joueur et par coordonnée
-            foreach ($plants as $plant) {
-                $player_plants[$plant['player_id']][$plant['coord']] = $this->_PLANT_CARDS[$plant['card_type']]['type'];
-            }
-
-            // 3. Organiser les rooms par joueur
-            $player_rooms = [];
-
-            // Remplir le tableau avec les rooms par joueur et par coordonnée
             foreach ($rooms as $room) {
-                $player_rooms[$room['player_id']][$room['coord']] = $this->_ROOM_CARDS[$room['card_type']]['type'];
+                $rooms_by_player[$room['player_id']][$room['coord']] = $this->_ROOM_CARDS[$room['card_type']]['type'];
             }
 
-            // 4. Vérifier les adjacences pour chaque room de chaque joueur
-            foreach ($player_rooms as $player_id => $rooms) {
-                // 5. Parcourir chaque room du joueur
+            foreach ($plants as $plant) {
+                $plants_by_player[$plant['player_id']][$plant['coord']] = $this->_PLANT_CARDS[$plant['card_type']]['type'];
+            }
+
+            // 3. Vérifier les adjacences joueur par joueur
+            foreach ($rooms_by_player as $player_id => $rooms) {
                 foreach ($rooms as $room_coord => $room_type) {
                     $adjacent_plants_count = 0;
+                    $adjacent_positions = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
 
-                    // 6. Vérifier les positions adjacentes de la room (gauche, droite, haut, bas)
-                    $tests = [$room_coord - 1, $room_coord + 1, $room_coord - 10, $room_coord + 10];
-
-                    foreach ($tests as $adjacent_coord) {
-                        // Vérifier si cette coordonnée est une plante et si sa couleur correspond à la room
-                        if (isset($player_plants[$player_id][$adjacent_coord])) {
-                            $plant_type = $player_plants[$player_id][$adjacent_coord];
-                            if ($room_type == $plant_type) {
-                                $adjacent_plants_count++;
-                            }
+                    foreach ($adjacent_positions as $adjacent_coord) {
+                        if (
+                            isset($plants_by_player[$player_id][$adjacent_coord]) &&
+                            $plants_by_player[$player_id][$adjacent_coord] == $room_type
+                        ) {
+                            $adjacent_plants_count++;
                         }
                     }
 
-                    // Si la room a 3 ou plus de plantes adjacentes du même type, lui donner 3 points
                     if ($adjacent_plants_count >= 3) {
-                        if (!isset($room_goal_bonus[$player_id])) {
-                            $room_goal_bonus[$player_id] = 0;
-                        }
-                        $room_goal_bonus[$player_id] += 3;
+                        $room_goal_bonus[$player_id] = ($room_goal_bonus[$player_id] ?? 0) + 3;
                     }
                 }
             }
         }
+
         if ($type == 13) // My Happy Place
         {
-            // calculé dans la fonction final scores
+            $rooms = self::getObjectListFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM room WHERE card_location NOT IN ('deck', 'market', 'discard')");
+
+            foreach ($rooms as $room) {
+                $player_id = $room['location'];
+                $type = $room['type'];
+                $room_infos = $this->_ROOM_CARDS[$room['type']];
+                $position = intval($room['location_arg']);
+
+                $score_room = 0;
+                $double = false;
+
+                $type_tile = intval(self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$player_id}' AND card_location_arg = '{$type}'"));
+                if ($type_tile != null) {
+                    $dizaine = intdiv($type_tile, 10);
+                    if ($dizaine == $room_infos['type']) {
+                        $double = true;
+                    }
+                }
+
+                $tests = [$position + 1, $position - 1, $position + 10, $position - 10];
+
+                foreach ($tests as $test) {
+                    $plant_type = self::getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location='{$player_id}' AND card_location_arg = '{$test}'");
+                    if ($plant_type != null) {
+                        if ($this->_PLANT_CARDS[$plant_type]['type'] == $room_infos['type']) {
+                            $bonus = $double ? 2 : 1;
+                            $score_room += $bonus;
+                        }
+                    }
+                }
+
+                $room_goal_bonus[$player_id] = max($room_goal_bonus[$player_id] ?? 0, $score_room);
+            }
         }
+
+        return $room_goal_bonus;
     }
 
     function getPlayersRooms()
@@ -2432,7 +2825,7 @@ class Game extends \Table
     function getPlayersPlants()
     {
         return self::getObjectListFromDB("
-            SELECT card_type, card_location AS player_id, card_location_arg AS coord
+            SELECT card_type, card_type_arg, card_location AS player_id, card_location_arg AS coord
             FROM plant
             WHERE card_location NOT IN ('deck', 'market', 'discard')
         ");
@@ -2446,6 +2839,34 @@ class Game extends \Table
         ");
     }
 
+    public function getPlant(string $where_clause = '1'): ?array
+    {
+        return $this->getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb 
+            FROM plant
+            WHERE $where_clause");
+    }
+
+    public function getRoom(string $where_clause = '1'): ?array
+    {
+        return $this->getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb 
+            FROM room
+            WHERE $where_clause");
+    }
+
+    public function getTile(string $where_clause = '1'): ?array
+    {
+        return $this->getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg 
+            FROM tile
+            WHERE $where_clause");
+    }
+
+    public function getPot(string $where_clause = '1'): ?array
+    {
+        return $this->getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg 
+            FROM pot
+            WHERE $where_clause");
+    }
+
     // Stats turns
 
     function updateNbTurns()
@@ -2456,6 +2877,24 @@ class Game extends \Table
             $this->incStat(1, 'turns_number');
         }
     }
+
+    // DEBUG
+
+    function debug_changeObjectiveCard(int $objective_1, int $objective_2, int $objective_3)
+    {
+        if ($this->getGameStateValue('game_mode') == 2) {
+            if (($objective_1 >= 1) && ($objective_1 <= 13)) {
+                $this->setGameStateValue('plant_goal', $objective_1);
+            }
+            if (($objective_2 >= 1) && ($objective_2 <= 13)) {
+                $this->setGameStateValue('item_goal', $objective_2);
+            }
+            if (($objective_3 >= 1) && ($objective_3 <= 13)) {
+                $this->setGameStateValue('room_goal', $objective_3);
+            }
+        }
+    }
+
 
 
     ///////////////////////////////////////////////////////////////////////////////// 
@@ -2475,14 +2914,14 @@ class Game extends \Table
         if ($this->gamestate->state()['name'] == "playerTurnMulti") {
             $explode = explode('_', $arg1);
             $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
-            $player_name = self::getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id={$player_id}");
+            $player_name = self::getPlayerNameById($player_id);
 
             $card_firstplant_type = self::getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location={$player_id} AND card_location_arg = 99");
-            $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_type = {$card_firstplant_type}");
+            $card_before = self::getPlant("card_type = {$card_firstplant_type}");
             $card_before['genre'] = 'plant';
             self::DbQuery("UPDATE plant set card_location_arg = $explode[1] WHERE card_type = {$card_firstplant_type}");
 
-            $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_type = {$card_firstplant_type}");
+            $card_after = self::getPlant("card_type = {$card_firstplant_type}");
 
             game::$instance->notifyAllPlayers(
                 'moveCardToHouse',
@@ -2528,73 +2967,92 @@ class Game extends \Table
         $nbre_players = count(self::getObjectListFromDB("SELECT player_id FROM player", true));
         $explode = explode('_', $arg1);
         $player_id = self::getActivePlayerId();
-        $player_name = self::getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id={$player_id}");
+        $player_name = self::getPlayerNameById($player_id);
 
         foreach ($explode as $plant_type) {
 
-            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$plant_type}'");
-            $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$plant_type}'");
-            $max_verdoiement = game::$instance->_PLANT_CARDS[$plant_type]['verdancy'];
+            if ($plant_type <= 60) {
+                self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$plant_type}'");
+                $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$plant_type}'");
+                $max_verdoiement = game::$instance->_PLANT_CARDS[$plant_type]['verdancy'];
 
-            if ($total_verdoiement < $max_verdoiement) {
-                $valeur_pot = -1;
-            } else {
+                if ($total_verdoiement < $max_verdoiement) {
+                    $valeur_pot = -1;
+                } else {
+
+                    if ($nbre_players >= 2) {
+
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' ORDER BY card_type DESC LIMIT 1");
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE pot set card_location = {$player_id} WHERE card_id = '{$pot_id}'");
+                        self::DbQuery("UPDATE pot set card_location_arg = $plant_type WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$plant_type}'");
+                    } else {
+                        $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+
+                        if (game::$instance->getGameStateValue('last_turn') != 1) {
+                            if ($nbre_pot_market == 4) {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                                $pot_origin = 'market_cell_15';
+                            } else {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
+                                $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                $pot_origin = 'pot_discard_' . $valeur_pot;
+                            }
+                        } else {
+                            $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                            $pot_origin = 'pot_deck_0';
+                        }
+
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE pot SET card_location = {$player_id}, card_location_arg = $plant_type WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$plant_type}'");
+                    }
+                }
 
                 if ($nbre_players >= 2) {
+                    game::$instance->notifyAllPlayers(
+                        'addVerdancy',
+                        '',
+                        array(
+                            'player_name' => $player_name,
+                            'player_id' => $player_id,
+                            'plant_type' => $plant_type,
+                            'verdancy_added' => 1,
+                            'pot_value' => $valeur_pot,
+                            'thumbs_used' => false,
 
-                    $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' ORDER BY card_type DESC LIMIT 1");
-                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE pot set card_location = {$player_id} WHERE card_id = '{$pot_id}'");
-                    self::DbQuery("UPDATE pot set card_location_arg = $plant_type WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$plant_type}'");
+                        )
+                    );
                 } else {
-                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+                    game::$instance->notifyAllPlayers(
+                        'addVerdancySolo',
+                        '',
+                        array(
+                            'player_name' => $player_name,
+                            'player_id' => $player_id,
+                            'plant_type' => $plant_type,
+                            'verdancy_added' => 1,
+                            'pot_value' => $valeur_pot,
+                            'thumbs_used' => false,
+                            'pot_origin' => $pot_origin
 
-
-                    if ($nbre_pot_market == 4) {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                        $pot_origin = 'market_pot_4';
-                    } else {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $pot_origin = 'pot_discard_' . $pot_id;
-                    }
-
-                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE pot SET card_location = {$player_id}, card_location_arg = $plant_type WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$plant_type}'");
+                        )
+                    );
                 }
-            }
-
-            if ($nbre_players >= 2) {
-                game::$instance->notifyAllPlayers(
-                    'addVerdancy',
-                    '',
-                    array(
-                        'player_name' => $player_name,
-                        'player_id' => $player_id,
-                        'plant_type' => $plant_type,
-                        'verdancy_added' => 1,
-                        'pot_value' => $valeur_pot,
-                        'thumbs_used' => false,
-
-                    )
-                );
             } else {
+                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
                 game::$instance->notifyAllPlayers(
-                    'addVerdancySolo',
+                    'addGreenThumbs',
                     '',
                     array(
-                        'player_name' => $player_name,
                         'player_id' => $player_id,
-                        'plant_type' => $plant_type,
-                        'verdancy_added' => 1,
-                        'pot_value' => $valeur_pot,
-                        'thumbs_used' => false,
-                        'pot_origin' => $pot_origin
+                        'nb_thumbs' => 1,
+
 
                     )
                 );
@@ -2614,7 +3072,7 @@ class Game extends \Table
     {
 
         $player_id = self::getActivePlayerId();
-        $player_name = self::getUniqueValueFromDB("SELECT player_name FROM player WHERE player_id={$player_id}");
+        $player_name = self::getPlayerNameById($player_id);
         $explode = explode(';', $arg1);
         $info = array_slice($explode, 1);
 
@@ -2627,13 +3085,13 @@ class Game extends \Table
 
             foreach ($info as $tiles) {
                 $tile = explode('_', $tiles);
-                $info_before_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id= '{$tile[1]}'");
+                $info_before_tile = self::getTile("card_id= '{$tile[1]}'");
                 $before_tile_id = $tile[1];
 
                 game::$instance->tile->moveCard($before_tile_id, 'deck', $new_position);
                 game::$instance->tile->pickCardForLocation('deck', 'market', $info_before_tile['location_arg']);
 
-                $info_after_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_location = 'market' AND card_location_arg = '{$info_before_tile['location_arg']}'");
+                $info_after_tile = self::getTile("card_location = 'market' AND card_location_arg = '{$info_before_tile['location_arg']}'");
 
                 $old_tiles[] = $info_before_tile;
                 $new_tiles[] = $info_after_tile;
@@ -2723,74 +3181,94 @@ class Game extends \Table
             $nbre_players = count(self::getObjectListFromDB("SELECT player_id FROM player", true));
             $explode = explode('_', $explode[1]);
 
-            $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
-            self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$explode[1]}'");
-            $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
-            $max_verdoiement = game::$instance->_PLANT_CARDS[$explode[1]]['verdancy'];
+            if ($explode[1] <= 60) {
 
-            $pot_origin = 0;
+                $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$explode[1]}'");
+                $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                $max_verdoiement = game::$instance->_PLANT_CARDS[$explode[1]]['verdancy'];
 
-            if ($total_verdoiement < $max_verdoiement) {
-                $valeur_pot = -1;
-                $delta = 1;
-            } else {
+                $pot_origin = 0;
+
+                if ($total_verdoiement < $max_verdoiement) {
+                    $valeur_pot = -1;
+                    $delta = 1;
+                } else {
+
+                    if ($nbre_players >= 2) {
+                        $delta = $max_verdoiement - $before_verdoiement;
+
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' ORDER BY card_type DESC LIMIT 1");
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE pot set card_location = {$player_id} WHERE card_id = '{$pot_id}'");
+                        self::DbQuery("UPDATE pot set card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
+                    } else {
+                        $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+
+                        if (game::$instance->getGameStateValue('last_turn') != 1) {
+                            if ($nbre_pot_market == 4) {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                                $pot_origin = 'market_cell_15';
+                            } else {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
+                                $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                $pot_origin = 'pot_discard_' . $valeur_pot;
+                            }
+                        } else {
+                            $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                            $pot_origin = 'pot_deck_0';
+                        }
+
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE pot SET card_location = {$player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+
+                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
+                }
 
                 if ($nbre_players >= 2) {
-                    $delta = $max_verdoiement - $before_verdoiement;
+                    game::$instance->notifyAllPlayers(
+                        'addVerdancy',
+                        '',
+                        array(
+                            'player_name' => $player_name,
+                            'player_id' => $player_id,
+                            'plant_type' => $explode[1],
+                            'verdancy_added' => $delta,
+                            'pot_value' => $valeur_pot,
+                            'thumbs_used' => true,
 
-                    $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' ORDER BY card_type DESC LIMIT 1");
-                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE pot set card_location = {$player_id} WHERE card_id = '{$pot_id}'");
-                    self::DbQuery("UPDATE pot set card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
+                        )
+                    );
                 } else {
-                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+                    game::$instance->notifyAllPlayers(
+                        'addVerdancySolo',
+                        '',
+                        array(
+                            'player_name' => $player_name,
+                            'player_id' => $player_id,
+                            'plant_type' => $explode[1],
+                            'verdancy_added' => $delta,
+                            'pot_value' => $valeur_pot,
+                            'thumbs_used' => true,
+                            'pot_origin' => $pot_origin
 
-
-                    if ($nbre_pot_market == 4) {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                        $pot_origin = 'market_pot_4';
-                    } else {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $pot_origin = 'pot_discard_' . $pot_id;
-                    }
-
-                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE pot SET card_location = {$player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-
-                    self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
+                        )
+                    );
                 }
-            }
-
-            if ($nbre_players >= 2) {
-                game::$instance->notifyAllPlayers(
-                    'addVerdancy',
-                    '',
-                    array(
-                        'player_name' => $player_name,
-                        'player_id' => $player_id,
-                        'plant_type' => $explode[1],
-                        'verdancy_added' => $delta,
-                        'pot_value' => $valeur_pot,
-                        'thumbs_used' => true,
-
-                    )
-                );
             } else {
+                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$player_id}");
                 game::$instance->notifyAllPlayers(
-                    'addVerdancySolo',
+                    'addGreenThumbs',
                     '',
                     array(
-                        'player_name' => $player_name,
                         'player_id' => $player_id,
-                        'plant_type' => $explode[1],
-                        'verdancy_added' => $delta,
-                        'pot_value' => $valeur_pot,
-                        'thumbs_used' => true,
-                        'pot_origin' => $pot_origin
+                        'nb_thumbs' => 1,
+
 
                     )
                 );

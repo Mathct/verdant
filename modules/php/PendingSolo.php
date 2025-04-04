@@ -36,7 +36,7 @@ class PendingSolo extends APP_GameClass
         $ret['title'] = clienttranslate('${actplayer} must take an action');
         $ret['titleyou'] = array();
 
-        $thumb = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
+        $thumb = game::$instance->getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
 
         $possible_plant = game::$instance->PossiblePosition($this->player_id, 'plant_0');
         $possible_room = game::$instance->PossiblePosition($this->player_id, 'room_0');
@@ -49,13 +49,21 @@ class PendingSolo extends APP_GameClass
                 $ret['titleyou'] = clienttranslate('${you} must choose a market card');
             }
 
-            $plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
-            $rooms = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
+            
+        }
 
+        $plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
+        $rooms = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
 
+        if ($possible_plant != null)
+        {
             foreach ($plants as $plant) {
                 $ret["selectable"][] = 'plant_' . $plant;
             }
+        }
+        
+        if ($possible_room != null)
+        {
             foreach ($rooms as $room) {
                 $ret["selectable"][] = 'room_' . $room;
             }
@@ -69,6 +77,7 @@ class PendingSolo extends APP_GameClass
     function NormalTurn($parg1, $parg2, $varg1, $varg2)
     {
         if ($varg1 == null) {
+            game::$instance->getFinalResults();
             game::$instance->addPending($this->player_id, "EndOfGame");
         } elseif ($varg1 == 'thumb') {
             game::$instance->addPending($this->player_id, "UseThumb", 1);
@@ -87,14 +96,48 @@ class PendingSolo extends APP_GameClass
         $ret["selected"] = array();
         $ret['buttons'] = array();
         $ret['title'] = clienttranslate('${actplayer} must take an action');
-        $ret['titleyou'] = clienttranslate('${you} must must choose a location');
+        $ret['titleyou'] = clienttranslate('${you} must choose a location');
 
         $ret["selected"][] = $parg1;
-
         $ret["card"][] = $parg1;
 
-        $ret["selectable"] = game::$instance->PossiblePosition($this->player_id, $parg1);
+        $explode_selected = explode('_', $parg1);
 
+        $plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
+        $rooms = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
+        $possible_plant = game::$instance->PossiblePosition($this->player_id, 'plant_0');
+        $possible_room = game::$instance->PossiblePosition($this->player_id, 'room_0');
+
+        if ($possible_plant != null)
+        {
+            foreach($plants as $plant)
+            {
+                if($plant != $explode_selected[1])
+                {
+                    $ret["selectable"][] = 'plant_'.$plant;
+                }
+            }
+
+        }
+
+        if ($possible_room != null)
+        {
+            foreach($rooms as $room)
+            {
+                if($room != $explode_selected[1])
+                {
+                    $ret["selectable"][] = 'room_'.$room;
+                }
+            }
+            
+        }
+
+        foreach(game::$instance->PossiblePosition($this->player_id, $parg1) as $possible)
+        {
+            $ret["selectable"][] = $possible;
+        }
+        
+        
         $ret['buttons'][] = 'cancel';
 
         return $ret;
@@ -105,26 +148,141 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == 'cancel') {
             game::$instance->addPending($this->player_id, "NormalTurn");
         } else {
+            if (strpos($varg1, "grid") === 0)
+            {
+            if($this->player_pref_confirm == 1)
+            {
+                $explode_market = explode('_', $parg1);
+                $explode_position = explode('_', $varg1);
+
+                if ($explode_market[0] == 'plant') {
+                    $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM plant WHERE card_type = '{$explode_market[1]}'");
+
+                    $card_id = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                    $card_type = $explode_market[1];
+
+                    $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+                    $card_before['genre'] = 'plant';
+
+
+                    $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
+                    self::DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
+                    self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                    game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
+
+                    $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+
+
+                    game::$instance->notifyAllPlayers(
+                        'moveCardToHouse',
+                        clienttranslate('${player_name} places a plant in the house'),
+                        array(
+                            'player_name' => $this->player_name,
+                            'card_before' => $card_before,
+                            'card_after' => $card_after
+
+
+                        )
+                    );
+                    
+                }
+
+                if ($explode_market[0] == 'room') {
+                    $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type = '{$explode_market[1]}'");
+
+                    $card_id = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                    $card_type = $explode_market[1];
+
+                    $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                    $card_before['genre'] = 'room';
+
+                    $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
+                    self::DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
+                    self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                    game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
+
+                    $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+
+                    game::$instance->notifyAllPlayers(
+                        'moveCardToHouse',
+                        clienttranslate('${player_name} places a room in the house'),
+                        array(
+                            'player_name' => $this->player_name,
+                            'card_before' => $card_before,
+                            'card_after' => $card_after
+
+
+                        )
+                    );
+                }
+
+                game::$instance->TestVerdoyanceSolo($this->player_id, $explode_market[0], $card_type, $explode_position[1]);
+
+
+                game::$instance->addPending($this->player_id, "NormalTurnStep3", $place_market);
+                }
+
+            if($this->player_pref_confirm == 2)
+            {
+                game::$instance->addPending($this->player_id, "ConfirmNormalTurnStep2", $parg1, $varg1);
+            }
+
+            }
+            else
+            {
+                game::$instance->addPending($this->player_id, "NormalTurnStep2", $varg1);
+            }
+        }
+    }
+
+    function argConfirmNormalTurnStep2($parg1, $parg2)
+    {
+        $ret = array();
+        $ret["selectable"] = array();
+        $ret["selectablemulti"] = array();
+        $ret["card"] = array();
+        $ret["selected"] = array();
+        $ret['buttons'] = array();
+        $ret['title'] = clienttranslate('${actplayer} must take an action');
+        $ret['titleyou'] = clienttranslate('${you} must confirm');
+
+        $ret["selected"][] = $parg1;
+        
+        $ret["card"][] = $parg1;
+        $ret["selectable"][]=$parg2;
+                
+        $ret['buttons'][] = 'yes';
+        $ret['buttons'][] = 'no';
+
+        return $ret;
+    }
+
+    function ConfirmNormalTurnStep2($parg1, $parg2, $varg1, $varg2)
+    {
+        if ($varg1 == 'no') {
+            game::$instance->addPending($this->player_id, "NormalTurn");
+        } else {
+            
             $explode_market = explode('_', $parg1);
-            $explode_position = explode('_', $varg1);
+            $explode_position = explode('_', $parg2);
 
             if ($explode_market[0] == 'plant') {
-                $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM plant WHERE card_type = '{$explode_market[1]}'");
 
-                $card_id = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                $place_market = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM plant WHERE card_type = '{$explode_market[1]}'");
+
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
-                $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+                $card_before = game::$instance->getPlant("card_id = {$card_id}");
                 $card_before['genre'] = 'plant';
 
 
-                $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
-                self::DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
                 game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
 
-                $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
-
+                $card_after = game::$instance->getPlant("card_id = {$card_id}");
 
                 game::$instance->notifyAllPlayers(
                     'moveCardToHouse',
@@ -139,29 +297,29 @@ class PendingSolo extends APP_GameClass
                 );
             }
             if ($explode_market[0] == 'room') {
-                $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type = '{$explode_market[1]}'");
 
-                $card_id = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                $place_market = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type = '{$explode_market[1]}'");
+
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
-                $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                $card_before = game::$instance->getRoom("card_id = {$card_id}");
                 $card_before['genre'] = 'room';
 
-                $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
-                self::DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
                 game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
 
-                $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                $card_after = game::$instance->getRoom("card_id = {$card_id}");
 
                 game::$instance->notifyAllPlayers(
-                    'moveCardToHousee',
+                    'moveCardToHouse',
                     clienttranslate('${player_name} places a room in the house'),
                     array(
                         'player_name' => $this->player_name,
                         'card_before' => $card_before,
                         'card_after' => $card_after
-
 
                     )
                 );
@@ -171,6 +329,7 @@ class PendingSolo extends APP_GameClass
 
 
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $place_market);
+           
         }
     }
 
@@ -201,7 +360,10 @@ class PendingSolo extends APP_GameClass
 
         if ($tile_reserve_type != null) {
             $ret["selectable"][] = 'tile_' . $tile_reserve_id;
+            if($tile_market_type != $tile_reserve_type)
+            {
             $ret['buttons'][] = 'tilebt_' . $tile_reserve_type;
+            }
         }
 
 
@@ -243,25 +405,53 @@ class PendingSolo extends APP_GameClass
             $tile_reserve_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
             $tile_reserve_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
 
-            if (($varg1 == "tile_" . $tile_market_id) || ($varg1 == "tilebt_" . $tile_market_type)) {
+            if($tile_market_type != $tile_reserve_type)
+            {
+
+                if (($varg1 == "tile_" . $tile_market_id) || ($varg1 == "tilebt_" . $tile_market_type)) {
 
 
-                if ($tile_market_type < 60) {
-                    game::$instance->addPending($this->player_id, "PlaceObjet", $tile_market_id, $parg1);
-                } else {
-                    game::$instance->addPending($this->player_id, "UseTool", $tile_market_id, $parg1);
+                    if ($tile_market_type < 60) {
+                        game::$instance->addPending($this->player_id, "PlaceObjet", $tile_market_id, $parg1);
+                    } else {
+                        game::$instance->addPending($this->player_id, "UseTool", $tile_market_id, $parg1);
+                    }
+                }
+
+
+                if (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type)) {
+
+
+                    if ($tile_reserve_type < 60) {
+                        game::$instance->addPending($this->player_id, "PlaceObjet", $tile_reserve_id, $parg1);
+                    } else {
+                        game::$instance->addPending($this->player_id, "UseTool", $tile_reserve_id, $parg1);
+                    }
                 }
             }
+            else
+            {
+                if (($varg1 == "tile_" . $tile_market_id) || ($varg1 == "tilebt_" . $tile_market_type)) {
 
 
-            if (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type)) {
-
-
-                if ($tile_reserve_type < 60) {
-                    game::$instance->addPending($this->player_id, "PlaceObjet", $tile_reserve_id, $parg1);
-                } else {
-                    game::$instance->addPending($this->player_id, "UseTool", $tile_reserve_id, $parg1);
+                    if ($tile_market_type < 60) {
+                        game::$instance->addPending($this->player_id, "PlaceObjet", $tile_market_id, $parg1);
+                    } else {
+                        game::$instance->addPending($this->player_id, "UseTool", $tile_market_id, $parg1);
+                    }
                 }
+
+
+                if ($varg1 == "tile_" . $tile_reserve_id) {
+
+
+                    if ($tile_reserve_type < 60) {
+                        game::$instance->addPending($this->player_id, "PlaceObjet", $tile_reserve_id, $parg1);
+                    } else {
+                        game::$instance->addPending($this->player_id, "UseTool", $tile_reserve_id, $parg1);
+                    }
+                }
+
             }
         }
     }
@@ -326,6 +516,8 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == 'cancel') {
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg2);
         } else {
+            if($this->player_pref_confirm == 1)
+            {
             $explode = explode('_', $varg1);
 
             $before_emplacement = self::getUniqueValueFromDB("SELECT card_location FROM tile WHERE card_id = '{$parg1}'");
@@ -348,18 +540,111 @@ class PendingSolo extends APP_GameClass
 
             game::$instance->tile->moveCard($parg1, $this->player_id, $explode[1]);
 
+            $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$parg1}'");
+            $x = $type % 10 - 1;
+            $y = floor($type / 10) - 1;
+
+            if ($y == 5) {
+                $tool_y = $x;
+                $icon = '<span class="item_bt" style="background-position: -900% -' . $tool_y . '00% ;"></span>';
+            } else {
+                $icon = '<span class="item_bt" style="background-position: -' . $x . '00% -' . $y . '00% ;"></span>';
+            }
+
             game::$instance->notifyAllPlayers(
                 'moveTileToHouse',
-                clienttranslate('${player_name} places an item in a room'),
+                clienttranslate('${player_name} places ${icon} in a room'),
                 array(
                     'player_name' => $this->player_name,
                     'player_id' => $this->player_id,
                     'tile' => $info_tile,
                     'card' => $info_card,
+                    'icon' => $icon,
                 )
             );
 
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg2);
+            }
+
+            if($this->player_pref_confirm == 2)
+            {
+                game::$instance->addPending($this->player_id, "ConfirmPlaceObjet", $parg1.';'.$parg2, $varg1);
+            }
+
+        }
+    }
+
+    function argConfirmPlaceObjet($parg1, $parg2)
+    {
+        
+        $ret = array();
+        $ret["selectable"] = array();
+        $ret["selectablemulti"] = array();
+        $ret["card"] = array();
+        $ret["selected"] = array();
+        $ret['buttons'] = array();
+        $ret['title'] = clienttranslate('${actplayer} must take an action');
+        $ret['titleyou'] = clienttranslate('${you} must confirm');
+
+        $explode = explode(';', $parg1);
+        $ret["selected"][] = 'tile_' . $explode[0];
+        $ret["selected"][] = $parg2;
+
+        
+                
+        $ret['buttons'][] = 'yes';
+        $ret['buttons'][] = 'no';
+
+        return $ret;
+    }
+
+    function ConfirmPlaceObjet($parg1, $parg2, $varg1, $varg2)
+    {
+        if ($varg1 == 'no') {
+            $explode = explode(';', $parg1);
+            game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
+        } else {
+            $explode = explode(';', $parg1);
+            $explode2 = explode('_', $parg2);
+
+            $before_emplacement = game::$instance->getUniqueValueFromDB("SELECT card_location FROM tile WHERE card_id = '{$explode[0]}'");
+
+            if ($before_emplacement == 'market') {
+
+                $info_tile = game::$instance->getTile("card_location = 'market' AND card_location_arg = '{$explode[1]}'");
+            } else {
+
+                $info_tile = game::$instance->getTile("card_location = '{$this->player_id}' AND card_location_arg = 99");
+            }
+
+            $info_card = game::$instance->getRoom("card_type= '{$explode2[1]}'");
+
+            game::$instance->tile->moveCard($explode[0], $this->player_id, $explode2[1]);
+
+            $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$explode[0]}'");
+            $x = $type % 10 - 1;
+            $y = floor($type / 10) - 1;
+
+            if ($y == 5) {
+                $tool_y = $x;
+                $icon = '<span class="item_bt" style="background-position: -900% -' . $tool_y . '00% ;"></span>';
+            } else {
+                $icon = '<span class="item_bt" style="background-position: -' . $x . '00% -' . $y . '00% ;"></span>';
+            }
+
+            game::$instance->notifyAllPlayers(
+                'moveTileToHouse',
+                clienttranslate('${player_name} places ${icon} in a room'),
+                array(
+                    'player_name' => $this->player_name,
+                    'player_id' => $this->player_id,
+                    'tile' => $info_tile,
+                    'card' => $info_card,
+                    'icon' => $icon,
+                )
+            );
+
+            game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
         }
     }
 
@@ -448,10 +733,15 @@ class PendingSolo extends APP_GameClass
             $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$parg1}'");
             $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
 
+            if(($this->player_pref_confirm == 1)||($type == 62))
+            {
+            
             if ($type == 61) {
 
                 $pot_origin = 0;
                 $explode = explode('_', $varg1);
+                if($explode[1] <= 60)
+                {
                 $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
                 self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +3 WHERE card_type = '{$explode[1]}'");
                 $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
@@ -464,19 +754,30 @@ class PendingSolo extends APP_GameClass
 
                     $delta = $max_verdoiement - $before_verdoiement;
 
+                    if(game::$instance->getGameStateValue('last_turn') != 1)
+                    {
                     if ($nbre_pot_market == 4) {
                         $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                        $pot_origin = 'market_pot_4';
+                        $pot_origin = 'market_cell_15';
                     } else {
                         $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $pot_origin = 'pot_discard_' . $pot_id;
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                        $pot_origin = 'pot_discard_' . $valeur_pot;
                     }
 
                     $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-
                     self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                    self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
 
-                    self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
+                    else
+                    {
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $valeur_pot = 0;
+                        $pot_origin = 'pot_deck_0';
+                        self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
                 }
 
                 game::$instance->notifyAllPlayers(
@@ -493,6 +794,23 @@ class PendingSolo extends APP_GameClass
 
                     )
                 );
+            }
+
+            else
+                {
+                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +3 WHERE player_id = {$this->player_id}");
+                    game::$instance->notifyAllPlayers(
+                        'addGreenThumbs',
+                        '',
+                        array(
+                            'player_id' => $this->player_id,
+                            'nb_thumbs' => 3,
+            
+            
+                        )
+                    );
+
+                }
 
                 $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id = '{$parg1}'");
 
@@ -544,7 +862,8 @@ class PendingSolo extends APP_GameClass
                     $type_plant = self::getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location ='{$this->player_id}' AND card_location_arg='{$test}'");
                     if (($type_plant != null) && (!in_array($type_plant, $all_pots))) {
 
-
+                        if($type_plant <= 60)
+                        {
                         self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
                         $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$type_plant}'");
                         $max_verdoiement = game::$instance->_PLANT_CARDS[$type_plant]['verdancy'];
@@ -553,20 +872,32 @@ class PendingSolo extends APP_GameClass
                             $valeur_pot = -1;
                         } else {
 
+                            if(game::$instance->getGameStateValue('last_turn') != 1)
+                            {
                             if ($nbre_pot_market == 4) {
                                 $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                                $pot_origin = 'market_pot_4';
+                                $pot_origin = 'market_cell_15';
                             } else {
                                 $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                                $pot_origin = 'pot_discard_' . $pot_id;
+                                $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                $pot_origin = 'pot_discard_' . $valeur_pot;
                             }
 
 
                             $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                            self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
+                            self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                            }
 
-                            self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                            else
+                            {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                                $valeur_pot = 0;
+                                $pot_origin = 'pot_deck_0';
+                                self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
+                                self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                            }
 
-                            self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$type_plant}'");
                         }
 
                         game::$instance->notifyAllPlayers(
@@ -582,6 +913,23 @@ class PendingSolo extends APP_GameClass
                                 'pot_origin' => $pot_origin
                             )
                         );
+                    }
+                    else
+                {
+                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$this->player_id}");
+                    game::$instance->notifyAllPlayers(
+                        'addGreenThumbs',
+                        '',
+                        array(
+                            'player_id' => $this->player_id,
+                            'nb_thumbs' => 1,
+            
+            
+                        )
+                    );
+
+                }
+
                     }
                 }
 
@@ -600,10 +948,297 @@ class PendingSolo extends APP_GameClass
                     )
                 );
 
-                game::$instance->incStat(1, 'watering_can', $this->player_id);
+                game::$instance->incStat(1, 'watering_can_used', $this->player_id);
 
                 game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg2);
             }
+
+            $x = $type % 10 - 1;
+            $y = floor($type / 10) - 1;
+
+            if ($y == 5) {
+                $tool_y = $x;
+                $icon = '<span class="item_bt" style="background-position: -900% -' . $tool_y . '00% ;"></span>';
+            } else {
+                $icon = '<span class="item_bt" style="background-position: -' . $x . '00% -' . $y . '00% ;"></span>';
+            }
+
+            game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+            );
+
+        }
+
+        if(($this->player_pref_confirm == 2)&&($type != 62))
+            {
+                game::$instance->addPending($this->player_id, "ConfirmUseTool", $parg1.';'.$parg2, $varg1);
+                
+                
+            }
+
+        }
+    }
+
+    function argConfirmUseTool($parg1, $parg2)
+    {
+        
+        $ret = array();
+        $ret["selectable"] = array();
+        $ret["selectablemulti"] = array();
+        $ret["card"] = array();
+        $ret["selected"] = array();
+        $ret['buttons'] = array();
+        $ret['title'] = clienttranslate('${actplayer} must take an action');
+        $ret['titleyou'] = clienttranslate('${you} must confirm');
+
+        $explode = explode(';', $parg1);
+        $ret["selected"][] = 'tile_' . $explode[0];
+        $ret["selected"][] = $parg2;
+
+        
+                
+        $ret['buttons'][] = 'yes';
+        $ret['buttons'][] = 'no';
+
+        return $ret;
+
+    }
+
+    function ConfirmUseTool($parg1, $parg2, $varg1, $varg2)
+    {
+        if ($varg1 == 'no') {
+            $explode = explode(';', $parg1);
+            game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
+        } else {
+            $explode2 = explode(';', $parg1);
+            $explode = explode('_', $parg2);
+            $type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$explode2[0]}'");
+            $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+
+            if ($type == 61) {
+
+                if($explode[1] <= 60)
+                {
+                $pot_origin = 0;
+                $before_verdoiement = game::$instance->getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                game::$instance->DbQuery("UPDATE plant set card_type_arg = card_type_arg +3 WHERE card_type = '{$explode[1]}'");
+                $total_verdoiement = game::$instance->getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                $max_verdoiement = game::$instance->_PLANT_CARDS[$explode[1]]['verdancy'];
+
+                if ($total_verdoiement < $max_verdoiement) {
+                    $valeur_pot = -1;
+                    $delta = 3;
+                } else {
+
+                    $delta = $max_verdoiement - $before_verdoiement;
+
+                    if(game::$instance->getGameStateValue('last_turn') != 1)
+                    {
+                    if ($nbre_pot_market == 4) {
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                        $pot_origin = 'market_cell_15';
+                    } else {
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                        $pot_origin = 'pot_discard_' . $valeur_pot;
+                    }
+
+                    
+                    $valeur_pot = game::$instance->getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+
+                    game::$instance->DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                    game::$instance->DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
+                    else
+                    {
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $valeur_pot = 0;
+                        $pot_origin = 'pot_deck_0';
+                        self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
+
+                }
+
+                game::$instance->notifyAllPlayers(
+                    'addVerdancySolo',
+                    '',
+                    array(
+                        'player_name' => $this->player_name,
+                        'player_id' => $this->player_id,
+                        'plant_type' => $explode[1],
+                        'verdancy_added' => $delta,
+                        'pot_value' => $valeur_pot,
+                        'thumbs_used' => false,
+                        'pot_origin' => $pot_origin
+
+                    )
+                );
+            }
+
+            else
+                {
+                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +3 WHERE player_id = {$this->player_id}");
+                    game::$instance->notifyAllPlayers(
+                        'addGreenThumbs',
+                        '',
+                        array(
+                            'player_id' => $this->player_id,
+                            'nb_thumbs' => 3,
+            
+            
+                        )
+                    );
+
+                }
+
+                $info_tile = game::$instance->getTile("card_id = '{$explode2[0]}'");
+
+                game::$instance->tile->moveCard($explode2[0], 'discard');
+
+                game::$instance->notifyAllPlayers(
+                    'discardTile',
+                    '',
+                    array(
+                        'player_id' => $this->player_id,
+                        'tile' => $info_tile,
+
+
+                    )
+                );
+                game::$instance->incStat(1, 'fertilizer_used', $this->player_id);
+                game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode2[1]);
+            }
+
+            
+
+            if ($type == 63) {
+                
+                $position_room = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type='{$explode[1]}'");
+                $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+
+                $tests = [$position_room + 1, $position_room - 1, $position_room + 10, $position_room - 10];
+
+                foreach ($tests as $test) {
+                    $pot_origin = 0;
+                    $type_plant = game::$instance->getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location ='{$this->player_id}' AND card_location_arg='{$test}'");
+                    if (($type_plant != null) && (!in_array($type_plant, $all_pots))) {
+
+                        if($type_plant <= 60)
+                        {
+                        game::$instance->DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
+                        $total_verdoiement = game::$instance->getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$type_plant}'");
+                        $max_verdoiement = game::$instance->_PLANT_CARDS[$type_plant]['verdancy'];
+
+                        if ($total_verdoiement < $max_verdoiement) {
+                            $valeur_pot = -1;
+                        } else {
+
+                            if(game::$instance->getGameStateValue('last_turn') != 1)
+                            {
+                            if ($nbre_pot_market == 4) {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                                $pot_origin = 'market_cell_15';
+                            } else {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
+                                $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                $pot_origin = 'pot_discard_' . $valeur_pot;
+                            }
+
+                            
+                            $valeur_pot = game::$instance->getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+
+                            game::$instance->DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
+
+                            game::$instance->DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                            }
+                            else
+                            {
+                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                                $valeur_pot = 0;
+                                $pot_origin = 'pot_deck_0';
+                                self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
+                                game::$instance->DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                            }
+
+                        }
+
+                        game::$instance->notifyAllPlayers(
+                            'addVerdancySolo',
+                            '',
+                            array(
+                                'player_name' => $this->player_name,
+                                'player_id' => $this->player_id,
+                                'plant_type' => $type_plant,
+                                'verdancy_added' => 1,
+                                'pot_value' => $valeur_pot,
+                                'thumbs_used' => false,
+                                'pot_origin' => $pot_origin
+                            )
+                        );
+                    }
+                    else
+                {
+                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$this->player_id}");
+                    game::$instance->notifyAllPlayers(
+                        'addGreenThumbs',
+                        '',
+                        array(
+                            'player_id' => $this->player_id,
+                            'nb_thumbs' => 1,
+            
+            
+                        )
+                    );
+
+                }
+
+                    }
+                }
+
+                $info_tile = game::$instance->getTile("card_id = '{$explode2[0]}'");
+
+                game::$instance->tile->moveCard($explode2[0], 'discard');
+
+                game::$instance->notifyAllPlayers(
+                    'discardTile',
+                    '',
+                    array(
+                        'player_id' => $this->player_id,
+                        'tile' => $info_tile,
+
+
+                    )
+                );
+
+                game::$instance->incStat(1, 'watering_can_used', $this->player_id);
+
+                game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode2[1]);
+            }
+
+            $x = $type % 10 - 1;
+            $y = floor($type / 10) - 1;
+
+            if ($y == 5) {
+                $tool_y = $x;
+                $icon = '<span class="item_bt" style="background-position: -900% -' . $tool_y . '00% ;"></span>';
+            } else {
+                $icon = '<span class="item_bt" style="background-position: -' . $x . '00% -' . $y . '00% ;"></span>';
+            }
+
+            game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+            );
         }
     }
 
@@ -653,6 +1288,9 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == 'cancel') {
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg1);
         } else {
+
+            if($this->player_pref_confirm == 1)
+            {
             $tile_market_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
             $tile_market_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
 
@@ -711,6 +1349,134 @@ class PendingSolo extends APP_GameClass
 
                 if ($tile_market_id != null) {
                     $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id='{$tile_market_id}'");
+
+                    game::$instance->tile->moveCard($tile_market_id, $this->player_id, 99);
+
+                    game::$instance->notifyAllPlayers(
+                        'moveTileToReserve',
+                        '',
+                        array(
+                            'player_id' => $this->player_id,
+                            'tile' => $info_tile,
+
+                        )
+                    );
+                }
+            }
+
+
+            game::$instance->addPending($this->player_id, "RefillMarket");
+            }
+
+            if($this->player_pref_confirm == 2)
+            {
+                game::$instance->addPending($this->player_id, "ConfirmChooseReserve", $parg1, $varg1);
+            }
+        }
+    }
+
+    function argConfirmChooseReserve($parg1, $parg2)
+    {
+        $ret = array();
+        $ret["selectable"] = array();
+        $ret["selectablemulti"] = array();
+        $ret["card"] = array();
+        $ret["selected"] = array();
+        $ret['buttons'] = array();
+        $ret['title'] = clienttranslate('${actplayer} must take an action');
+        $ret['titleyou'] = clienttranslate('${you} must confirm');
+
+        $tile_market_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+        $tile_market_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+
+        $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+        $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+
+        if (($parg2 == "tile_" . $tile_market_id) || ($parg2 == "tilebt_" . $tile_market_type)) {
+            $ret["selected"][] = 'tile_' . $tile_market_id;
+            
+        }
+
+        if (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type)) {
+            $ret["selected"][] = 'tile_' . $tile_reserve_id;
+        }
+
+        
+                
+        $ret['buttons'][] = 'yes';
+        $ret['buttons'][] = 'no';
+
+        return $ret;
+
+
+
+    }
+
+    function ConfirmChooseReserve($parg1, $parg2, $varg1, $varg2)
+    {
+
+        if ($varg1 == 'no') {
+            game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg1);
+        } else {
+
+            $tile_market_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+            $tile_market_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+
+            $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+            $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+
+            if (($parg2 == "tile_" . $tile_market_id) || ($parg2 == "tilebt_" . $tile_market_type)) {
+                $info_tile_reserve = game::$instance->getTile("card_location='{$this->player_id}' AND card_location_arg = 99");
+
+                game::$instance->tile->moveCard($tile_reserve_id, 'discard');
+
+                game::$instance->notifyAllPlayers(
+                    'discardTile',
+                    '',
+                    array(
+                        'player_id' => $this->player_id,
+                        'tile' => $info_tile_reserve,
+
+
+                    )
+                );
+
+
+
+
+
+                $info_tile = game::$instance->getTile("card_id='{$tile_market_id}'");
+                game::$instance->tile->moveCard($tile_market_id, $this->player_id, 99);
+
+                game::$instance->notifyAllPlayers(
+                    'moveTileToReserve',
+                    '',
+                    array(
+                        'player_id' => $this->player_id,
+                        'tile' => $info_tile,
+
+                    )
+                );
+            } elseif (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type)) {
+                $info_tile = game::$instance->getTile("card_location = 'market' AND card_location_arg = '{$parg1}'");
+
+                game::$instance->tile->moveCard($tile_market_id, 'discard');
+
+                game::$instance->notifyAllPlayers(
+                    'discardTile',
+                    '',
+                    array(
+                        'player_id' => $this->player_id,
+                        'tile' => $info_tile,
+
+
+                    )
+                );
+            } else {
+
+
+                if ($tile_market_id != null) {
+                    $info_tile = game::$instance->getTile("card_id='{$tile_market_id}'");
 
                     game::$instance->tile->moveCard($tile_market_id, $this->player_id, 99);
 
@@ -922,6 +1688,32 @@ class PendingSolo extends APP_GameClass
             )
         );
 
+        $thumb = game::$instance->getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
+        if($thumb > 5)
+        {
+            game::$instance->DbQuery("UPDATE player set player_thumb = 5 WHERE player_id = {$this->player_id}");
+            game::$instance->notifyAllPlayers(
+                'setGreenThumbs',
+                '',
+                array(
+                    'player_id' => $this->player_id,
+                    'nb_thumbs' => 5,
+    
+    
+                )
+            );
+
+        }
+
+        $nbre_plants = count(self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = '{$this->player_id}'", true));
+        $nbre_rooms = count(self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = '{$this->player_id}'", true));
+
+        if($nbre_plants + $nbre_rooms == 14)
+        {
+            game::$instance->setGameStateValue('last_turn', 1);
+        }
+
+
 
         game::$instance->giveExtraTime($this->player_id);
         game::$instance->updateNbTurns();
@@ -980,6 +1772,8 @@ class PendingSolo extends APP_GameClass
 
         if (!empty($plants_without_pots)) {
             foreach ($plants_without_pots as $plant) {
+                if($plant <= 60)
+                {
                 if ($parg1 == 1) {
                     $ret["selectablethumb"][] = 'plant_' . $plant;
                 }
@@ -987,11 +1781,16 @@ class PendingSolo extends APP_GameClass
                     $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy)');
                     $ret["selectable"][] = 'plant_' . $plant;
                 }
+                }
             }
 
             if ($parg1 == 1) {
                 $ret['buttons'][] = 'validate_verdancy';
             }
+        }
+
+        if ($parg1 == 1) {
+            $ret['buttons'][] = 'reset';
         }
 
 
@@ -1007,6 +1806,17 @@ class PendingSolo extends APP_GameClass
 
 
         if ($parg1 == 1) {
+
+            $icon = '<span class="thumb_bt"></span>';
+            game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+            );
+
             game::$instance->addPending($this->player_id, "NormalTurn");
         }
 
@@ -1015,6 +1825,8 @@ class PendingSolo extends APP_GameClass
 
                 $pot_origin = 0;
                 $explode = explode('_', $varg1);
+                if($explode[1] <= 60)
+                {
                 $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
                 self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$explode[1]}'");
                 $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
@@ -1024,14 +1836,17 @@ class PendingSolo extends APP_GameClass
                     $valeur_pot = -1;
                 } else {
 
+                    if(game::$instance->getGameStateValue('last_turn') != 1)
+                    {
                     $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
 
                     if ($nbre_pot_market == 4) {
                         $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
-                        $pot_origin = 'market_pot_4';
+                        $pot_origin = 'market_cell_15';
                     } else {
                         $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $pot_origin = 'pot_discard_' . $pot_id;
+                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                        $pot_origin = 'pot_discard_' . $valeur_pot;
                     }
 
 
@@ -1039,7 +1854,17 @@ class PendingSolo extends APP_GameClass
 
                     self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
 
-                    self::DbQuery("UPDATE plant SET card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
+                    self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
+                    else
+                    {
+                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $valeur_pot = 0;
+                        $pot_origin = 'pot_deck_0';
+                        self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    }
+
                 }
 
                 game::$instance->notifyAllPlayers(
@@ -1055,8 +1880,37 @@ class PendingSolo extends APP_GameClass
                         'pot_origin' => $pot_origin
                     )
                 );
+            }
+
+            else
+                {
+                    game::$instance->notifyAllPlayers(
+                        'addGreenThumbs',
+                        '',
+                        array(
+                            'player_id' => $this->player_id,
+                            'nb_thumbs' => 1,
+            
+            
+                        )
+                    );
+
+                }
+
+
 
                 self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+
+                $icon = '<span class="thumb_bt"></span>';
+            game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+            );
+
             }
 
             if ($parg2 == "FinalTurn") {
@@ -1078,7 +1932,7 @@ class PendingSolo extends APP_GameClass
         $ret["selected"] = array();
         $ret['buttons'] = array();
         $ret['title'] = clienttranslate('${actplayer} must take an action');
-        $ret['titleyou'] = clienttranslate('${you} must must choose a location');
+        $ret['titleyou'] = clienttranslate('${you} must choose a location');
 
         $ret["selected"][] = $parg1;
         $ret["selected"][] = $parg2;
@@ -1097,6 +1951,8 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == 'cancel') {
             game::$instance->addPending($this->player_id, "NormalTurn");
         } else {
+            if($this->player_pref_confirm == 1)
+            {
             $explode_market = explode('_', $parg1);
             $explode_tile = explode('_', $parg2);
             $explode_position = explode('_', $varg1);
@@ -1165,6 +2021,151 @@ class PendingSolo extends APP_GameClass
             game::$instance->TestVerdoyanceSolo($this->player_id, $explode_market[0], $card_type, $explode_position[1]);
 
             self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+
+            $icon = '<span class="thumb_bt"></span>';
+            game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+            );
+
+            game::$instance->notifyAllPlayers(
+                'useThumbs',
+                '',
+                array(
+                    'player_name' => $this->player_name,
+                    'player_id' => $this->player_id,
+
+                )
+            );
+
+            game::$instance->addPending($this->player_id, "NormalTurnStep3", $place_market);
+        }
+
+        if($this->player_pref_confirm == 2)
+            {
+                game::$instance->addPending($this->player_id, "ConfirmNormalTurnStep2Thumb", $parg1.';'.$parg2, $varg1);
+            }
+
+        }
+    }
+
+    function argConfirmNormalTurnStep2Thumb($parg1, $parg2)
+    {
+        $ret = array();
+        $ret["selectable"] = array();
+        $ret["selectablemulti"] = array();
+        $ret["card"] = array();
+        $ret["selected"] = array();
+        $ret['buttons'] = array();
+        $ret['title'] = clienttranslate('${actplayer} must take an action');
+        $ret['titleyou'] = clienttranslate('${you} must confirm');
+
+        $explode = explode(';', $parg1);
+        $ret["selected"][] = $explode[0];
+        $ret["selected"][] = $explode[1];
+
+
+        $ret["card"][] = $explode[0];
+
+        $ret["selectable"][] = $parg2;
+
+        
+
+        $ret['buttons'][] = 'yes';
+        $ret['buttons'][] = 'no';
+
+        return $ret;
+    }
+
+    function ConfirmNormalTurnStep2Thumb($parg1, $parg2, $varg1, $varg2)
+    {
+        if ($varg1 == 'no') {
+            game::$instance->addPending($this->player_id, "NormalTurn");
+        } else {
+            $explode = explode(';', $parg1);
+
+            $explode_market = explode('_', $explode[0]);
+            $explode_tile = explode('_', $explode[1]);
+            $explode_position = explode('_', $parg2);
+
+            $place_market = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM tile WHERE card_id = '{$explode_tile[1]}'");
+
+            if ($explode_market[0] == 'plant') {
+
+
+
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                $card_type = $explode_market[1];
+
+                $card_before = game::$instance->getPlant("card_id = {$card_id}");
+                $card_before['genre'] = 'plant';
+
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
+
+                $card_after = game::$instance->getPlant("card_id = {$card_id}");
+
+
+                game::$instance->notifyAllPlayers(
+                    'moveCardToHouse',
+                    clienttranslate('${player_name} places a plant in the house'),
+                    array(
+                        'player_name' => $this->player_name,
+                        'card_before' => $card_before,
+                        'card_after' => $card_after
+
+
+                    )
+                );
+            }
+            if ($explode_market[0] == 'room') {
+
+
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                $card_type = $explode_market[1];
+
+                $card_before = game::$instance->getRoom("card_id = {$card_id}");
+                $card_before['genre'] = 'room';
+
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
+
+                $card_after = game::$instance->getRoom("card_id = {$card_id}");
+
+                game::$instance->notifyAllPlayers(
+                    'moveCardToHouse',
+                    clienttranslate('${player_name} places a room in the house'),
+                    array(
+                        'player_name' => $this->player_name,
+                        'card_before' => $card_before,
+                        'card_after' => $card_after
+
+
+                    )
+                );
+            }
+
+            game::$instance->TestVerdoyanceSolo($this->player_id, $explode_market[0], $card_type, $explode_position[1]);
+
+            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+
+            $icon = '<span class="thumb_bt"></span>';
+            game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+            );
 
             game::$instance->notifyAllPlayers(
                 'useThumbs',

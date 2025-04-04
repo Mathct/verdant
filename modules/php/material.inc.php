@@ -1095,7 +1095,7 @@ $this->_ROOM_CARDS = [
      ],
      47 => [
           "type" => 4,
-          "lightning" => ["north" => 3, "east" => 2, "south" => 1, "west" => 1]
+          "lightning" => ["north" => 3, "east" => 2, "south" => 2, "west" => 1]
      ],
      48 => [
           "type" => 4,

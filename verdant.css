@@ -95,11 +95,26 @@ body {
     flex: 4;
     min-width: 200px;
   }
+
+  .tooltip_bigtitle {
+    font-family: MinionPro;
+    font-size: 24pt;
+    font-variant: small-caps;
+    color: #1f3a21;
+    font-weight: bold;
+  }
   
   .tooltip_title {
     font-family: MinionPro;
     font-size: 20pt;
     font-variant: small-caps;
+    /*color:#719e1f;*/
+    color: #1f3a21;
+  }
+
+    .tooltip_subtitle {
+    font-family: MinionPro;
+    font-size: 16pt;
     /*color:#719e1f;*/
     color: #1f3a21;
   }
@@ -928,22 +943,34 @@ font-family: "MyriadPro";
     display: flex;
     justify-content: center;
     align-items: center;
+
 }
 
 .modal-content {
   position: relative;
-    background: white;
-    padding: 20px;
+    background: #ebe7d8;
+    padding: 10px;
     border-radius: 10px;
-    width: 50%;
-    text-align: center;
+    width: 70%;
+    max-height: 95vh; /* Limite la hauteur à 90% de la fenêtre */
+    overflow-y: auto; /* Ajoute un scroll si nécessaire */
+    /*text-align: center;*/
+    border: solid 1px rgb(57, 86, 105);
+    box-shadow: 3px 5px 5px rgb(0, 0, 0);
 }
 
 .close {
     position: absolute;
     right: 15px;
     top: 10px;
-    font-size: 25px;
+    font-size: 32px;
     cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    margin-top: 15%;
+    width: 95%;
+  }
 }
 

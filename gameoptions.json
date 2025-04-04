@@ -11,12 +11,17 @@
             "2": {
                 "name": "Advanced", 
                 "tmdisplay": "Advanced", 
-                "description": "Playing with objective cards"
-            }   
+                "description": "Playing with normal objective cards"
+            },
+            
+            "3": {
+                "name": "Expanded", 
+                "tmdisplay": "Expanded", 
+                "description": "Playing with potless and new objective cards"
+            }
                 
         },
         
         "default": 1
-              
     }
 }

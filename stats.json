@@ -92,7 +92,7 @@
           "type": "int"
         },
 
-        "watering_can": {
+        "watering_can_used": {
           "id": 23,
           "name": "Watering used",
           "type": "int"

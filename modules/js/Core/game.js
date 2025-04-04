@@ -5,14 +5,8 @@
 var isDebug = window.location.host == 'studio.boardgamearena.com' || window.location.hash.indexOf('debug') > -1;
 var debug = isDebug ? console.info.bind(window.console) : function () {};
 
-define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouislider.min.js', 'ebg/core/gamegui'], (
-  dojo,
-  declare,
-  noUiSlider
-) => {
-  const isPromise = (v) => typeof v === 'object' && typeof v.then === 'function';
-
-  return declare('customgame.game', ebg.core.gamegui, {
+define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
+  return declare('customgame.game', [ebg.core.gamegui], {
     /*
      * Constructor
      */
@@ -21,15 +15,19 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       this._activeStates = [];
       this._connections = [];
       this._selectableNodes = [];
-      this._activeStatus = null;
-      this._helpMode = false;
-      this._dragndropMode = false;
-      this._customTooltipIdCounter = 0;
-      this._registeredCustomTooltips = {};
 
+      this.canceledNotifFeature = false;
       this._notif_uid_to_log_id = {};
-      this._notif_uid_to_mobile_log_id = {};
       this._last_notif = null;
+
+
+
+
+
+
+ 
+
+
       dojo.place('loader_mask', 'overall-content', 'before');
       dojo.style('loader_mask', {
         height: '100vh',
@@ -40,26 +38,8 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       this._displayNotifsOnTopWhenGameState = true;
       this._hideNotifsWhenMultiActive = false;
       this._displayRestartButtons = true;
-      this.alwaysFixTopActions = true;
-      //Max percentage of screen to use with top bar :
-      this.alwaysFixTopActionsMaximum = 30;
     },
 
-
-
-
-    showMessage(msg, type) {
-      if (type == 'error') {
-        console.error(msg);
-        if (msg && msg.startsWith("!!!")) {
-          if (msg == "!!!checkVersion") {
-            this.infoDialog(  _("A new version of this game is now available"),_("Reload Required"), () => {window.location.reload(true);},true);
-          }
-          return; // suppress red banner and gamelog message
-        }
-      }
-      return this.inherited(arguments);
-    },
 
     isFastMode() {
       return this.instantaneousMode;
@@ -96,7 +76,8 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
 
     onLoadingComplete() {
       debug('Loading complete');
-      //      this.cancelLogs(this.gamedatas.canceledNotifIds);
+      if (this.canceledNotifFeature) 
+        this.cancelLogs(this.gamedatas.canceledNotifIds);
     },
 
 
@@ -146,6 +127,18 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       if (this[methodName] !== undefined) this[methodName](args.args);
     },
 
+
+    /**
+     * Check change of activity
+     */
+    onUpdateActionButtons(stateName, args) {
+
+        // Call appropriate method
+        var methodName = 'onUpdateActivity' + stateName.charAt(0).toUpperCase() + stateName.slice(1);
+        if (this[methodName] !== undefined) this[methodName](args, status);
+      //}
+    },
+
     /**
      * onLeavingState:
      * 	this method is called each time we are leaving a game state.
@@ -163,67 +156,10 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       if (this[methodName] !== undefined) this[methodName]();
     },
 
-/*    removeAllActionButtons() {
-      this.removeActionButtons();
-      dojo.empty('customActions');
-      dojo.empty('restartAction');
-    },*/
-    
-/*    undoToStep(stepId) {
-      this.checkAction('actRestart');
-      this.performAction('actUndoToStep', { stepId }, false);
-    },*/
-
-  /*  clearPreAnimation() {
-      debug('clearPreAnimation()' );
-      this._connections.forEach(dojo.disconnect);
-      this._connections = [];
-      this._selectableNodes.forEach((node) => {
-        if ($(node)) dojo.removeClass(node, 'selectable selected');
-      });
-      this._selectableNodes = [];
-      dojo.query('.unselectable').removeClass('unselectable');
-      dojo.query('.selectable').removeClass('selectable');
-      dojo.query('.selected').removeClass('selected');
-    },*/
-
-  /*  clearPossible() {
-      debug('clearPossible()' );
-      this.clearPreAnimation();
-      this.removeAllActionButtons(); 
-    },
-
-
-    clearPossible() {
-      this.clearTitleBar();
-
-      this._connections.forEach(dojo.disconnect);
-      this._connections = [];
-      this._selectableNodes.forEach((node) => {
-        if ($(node)) dojo.removeClass(node, 'selectable selected');
-      });
-      this._selectableNodes = [];
-      dojo.query('.unselectable').removeClass('unselectable');
-      dojo.query('.selected').removeClass('selected');
-    },*/
-
 
     
 
-    /**
-     * Check change of activity
-     */
-    onUpdateActionButtons(stateName, args) {
-      let status = this.isCurrentPlayerActive();
-      if (status != this._activeStatus) {
-        debug('Update activity: ' + stateName, status);
-        this._activeStatus = status;
-
-        // Call appropriate method
-        var methodName = 'onUpdateActivity' + stateName.charAt(0).toUpperCase() + stateName.slice(1);
-        if (this[methodName] !== undefined) this[methodName](args, status);
-      }
-    },
+ 
 
     /*
      * setupNotifications
@@ -243,56 +179,13 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
 
     setupNotifications() {
       console.log("setupNotifications",this._notifications); 
-      /*
-      this._notifications.forEach((notif) => {
-        var functionName = 'notif_' + notif[0];
-
-        let wrapper = (args) => {
-          if(this._displayNotifsOnTop 
-            && !(this.gamedatas.gamestate.type == 'multipleactiveplayer' && this._hideNotifsWhenMultiActive)
-            || this.gamedatas.gamestate.type == 'game' && this._displayNotifsOnTopWhenGameState){
-            let msg = this.format_string_recursive(args.log, args.args);
-            if (msg != '') {
-              $('gameaction_status').innerHTML = msg;
-              $('pagemaintitletext').innerHTML = msg;
-              this.removeAllActionButtons();
-            }
-          }
-          let timing = this[functionName](args);
-          if (timing === undefined) {
-            if (notif[1] === undefined) {
-              console.error("A notification don't have default timing and didn't send a timing as return value : " + notif[0]);
-              return;
-            }
-
-            // Override default timing by 1 in case of fast replay mode
-            timing = this.isFastMode() ? 0 : notif[1];
-          }
-
-          if (timing !== null && !isPromise(timing)) {
-            this.notifqueue.setSynchronousDuration(timing);
-          }
-        };
-
-        dojo.subscribe(notif[0], this, wrapper);
-        this.notifqueue.setSynchronous(notif[0]);
-
-        if (notif[2] != undefined) {
-          this.notifqueue.setIgnoreNotificationCheck(notif[0], notif[2]);
-        }
-      });
-
-      this.notifqueue.setSynchronousDuration = (duration) => {
-        setTimeout(() => dojo.publish('notifEnd', null), duration);
-      };
-      */
      
       //2024 NEw Framework function
       this.bgaSetupPromiseNotifications( {
         minDuration: 900, // because slide 800
         //minDurationNoText: 500,
-        logger: debug,
-        onStart: (notifName, msg, args) => {
+        //logger: debug,
+        /*onStart: (notifName, msg, args) => {
           if (this._displayNotifsOnTop && msg != '') {
             $('gameaction_status').innerHTML = msg;
             $('pagemaintitletext').innerHTML = msg;
@@ -302,7 +195,7 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
         }, 
         onEnd: (notifName, msg, args) => { 
           //To see log 
-        },
+        },*/
       });
     },
 
@@ -321,20 +214,13 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
      * params:
      *  - buttonId : id of the action button
      *  - time : time before auto click
-     *  - pref : 0 is disabled (auto-click), 1 if normal timer, 2 if no timer and show normal button
      */
 
-    startActionTimer(buttonId, time, pref, autoclick = false) {
+    startActionTimer(buttonId, time) {
       var button = $(buttonId);
       var isReadOnly = this.isReadOnly();
-      if (button == null || isReadOnly || pref == 2) {
-        debug('Ignoring startActionTimer(' + buttonId + ')', 'readOnly=' + isReadOnly, 'prefValue=' + pref);
-        return;
-      }
-
-      // If confirm disabled, click on button
-      if (pref == 0) {
-        if (autoclick) button.click();
+      if (button === null || isReadOnly) {
+        debug('Ignoring startActionTimer(' + buttonId + ')', 'readOnly=' + isReadOnly);
         return;
       }
 
@@ -342,26 +228,29 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       this._actionTimerSeconds = time;
       this._actionTimerFunction = () => {
         var button = $(buttonId);
-        if (button == null) {
+        if (button === null) {
           this.stopActionTimer();
         } else if (this._actionTimerSeconds-- > 1) {
           button.innerHTML = this._actionTimerLabel + ' (' + this._actionTimerSeconds + ')';
         } else {
           debug('Timer ' + buttonId + ' execute');
           button.click();
-          this.stopActionTimer();
         }
       };
+      dojo.connect($(buttonId), 'click', () => this.stopActionTimer());
       this._actionTimerFunction();
-      this._actionTimerId = window.setInterval(this._actionTimerFunction.bind(this), 1000);
+      this._actionTimerId = window.setInterval(this._actionTimerFunction, 1000);
       debug('Timer #' + this._actionTimerId + ' ' + buttonId + ' start');
     },
 
-    stopActionTimer() {
+    stopActionTimer(buttonWithTimer = null) {
       if (this._actionTimerId != null) {
         debug('Timer #' + this._actionTimerId + ' stop');
         window.clearInterval(this._actionTimerId);
         delete this._actionTimerId;
+      }
+      if (buttonWithTimer) {
+        $(buttonWithTimer).innerHTML = this._actionTimerLabel;
       }
     },
 
@@ -372,53 +261,6 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       playSound(sound);
       playNextMoveSound && this.disableNextMoveSound();
     },
-/*
-    resetPageTitle() {
-      this.changePageTitle();
-    },
-
-    changePageTitle(suffix = null, save = false) {
-      if (suffix == null) {
-        suffix = 'generic';
-      }
-
-      let state = this.gamedatas.gamestate;
-      if (state.private_state && this.isCurrentPlayerActive()) {
-        state = state.private_state;
-        if (!state['descriptionmyturn' + suffix]) return;
-        state.descriptionmyturn = state['descriptionmyturn' + suffix];
-        this.updatePageTitle(state);
-        return;
-      }
-
-      if (!this.gamedatas.gamestate['descriptionmyturn' + suffix] && this.isCurrentPlayerActive()) return;
-
-      if (save) {
-        this.gamedatas.gamestate.descriptionmyturngeneric = this.gamedatas.gamestate.descriptionmyturn;
-        this.gamedatas.gamestate.descriptiongeneric = this.gamedatas.gamestate.description;
-      }
-
-      this.gamedatas.gamestate.descriptionmyturn = this.gamedatas.gamestate['descriptionmyturn' + suffix];
-      if (this.gamedatas.gamestate['description' + suffix])
-        this.gamedatas.gamestate.description = this.gamedatas.gamestate['description' + suffix];
-      this.updatePageTitle();
-    },*/
-
-
-    /*
-     * Add a blue/grey button if it doesn't already exists
-     */
-  /*  addPrimaryActionButton(id, text, callback, zone = 'customActions') {
-      if (!$(id)) this.addActionButton(id, text, callback, zone, false, 'blue');
-    },
-
-    addSecondaryActionButton(id, text, callback, zone = 'customActions') {
-      if (!$(id)) this.addActionButton(id, text, callback, zone, false, 'gray');
-    },
-
-    addDangerActionButton(id, text, callback, zone = 'customActions') {
-      if (!$(id)) this.addActionButton(id, text, callback, zone, false, 'red');
-    },*/
 /*
     clearActionButtons() {
       dojo.empty('customActions');
@@ -467,24 +309,36 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
           className: 'moving',
           from: null,
           clearPos: true,
-          beforeBrother: null,
-          to: null,
-
-          phantom: true,
+          phantom: false,
+          targetPos: 'last',
+         
         },
         options
       );
       config.phantomStart = config.phantomStart || config.phantom;
       config.phantomEnd = config.phantomEnd || config.phantom;
 
-      // Mobile elt
+      // Handle phantom at start
       mobileElt = $(mobileElt);
       let mobile = mobileElt;
-      // Target elt
+      if (config.phantomStart) {
+        mobile = dojo.clone(mobileElt);
+        dojo.attr(mobile, 'id', mobileElt.id + '_animated');
+        dojo.place(mobile, 'game_play_area');
+        this.placeOnObject(mobile, mobileElt);
+        dojo.addClass(mobileElt, 'phantom');
+        config.from = mobileElt;
+      }
+
+      // Handle phantom at end
       targetElt = $(targetElt);
       let targetId = targetElt;
-      const newParent = config.attach ? targetId : $(mobile).parentNode;
-
+      if (config.phantomEnd) {
+        targetId = dojo.clone(mobileElt);
+        dojo.attr(targetId, 'id', mobileElt.id + '_afterSlide');
+        dojo.addClass(targetId, 'phantom');
+        dojo.place(targetId, targetElt, config.targetPos);
+      }
       // Handle fast mode
       if (!this.bgaAnimationsActive() && (config.destroy || config.clearPos)) {
         if (config.destroy) this.destroy(mobile);
@@ -495,37 +349,16 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
         });
       }
 
-      // Handle phantom at start
-      if (config.phantomStart && config.from == null) {
-        mobile = dojo.clone(mobileElt);
-        dojo.attr(mobile, 'id', mobileElt.id + '_animated');
-        dojo.place(mobile, 'game_play_area');
-        this.placeOnObject(mobile, mobileElt);
-        dojo.addClass(mobileElt, 'phantom');
-        config.from = mobileElt;
-      }
-
-      // Handle phantom at end
-      if (config.phantomEnd) {
-        targetId = dojo.clone(mobileElt);
-        dojo.attr(targetId, 'id', mobileElt.id + '_afterSlide');
-        dojo.addClass(targetId, 'phantom');
-        if (config.beforeBrother != null) {
-          dojo.place(targetId, config.beforeBrother, 'before');
-        } else {
-          dojo.place(targetId, targetElt);
-        }
-      }
-
-      dojo.style(mobile, 'zIndex', 5000);
+      const newParent = config.attach ? targetId : $(mobile).parentNode;
+      dojo.style(mobile, 'zIndex', 1000);
       dojo.addClass(mobile, config.className);
       if (config.changeParent) this.changeParent(mobile, 'game_play_area');
       if (config.from != null) this.placeOnObject(mobile, config.from);
-      return new Promise(async (resolve, reject) => {
+      return new Promise(async (resolve, _) => {
         const animation =
           config.pos == null
-            ? this.slideToObject(mobile, config.to || targetId, config.duration, config.delay)
-            : this.slideToObjectPos(mobile, config.to || targetId, config.pos.x, config.pos.y, config.duration, config.delay);
+            ? this.slideToObject(mobile, targetId, config.duration, config.delay)
+            : this.slideToObjectPos(mobile, targetId, config.pos.x, config.pos.y, config.duration, config.delay);
 
         dojo.connect(animation, 'onEnd', () => {
           dojo.style(mobile, 'zIndex', null);
@@ -535,21 +368,22 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
             dojo.removeClass(mobileElt, 'phantom');
             mobile = mobileElt;
           }
-          if (config.destroy) this.destroy(mobile);
-          else if (config.changeParent) {
+          if (config.changeParent) {
             if (config.phantomEnd) dojo.place(mobile, targetId, 'replace');
             else this.changeParent(mobile, newParent);
           }
-          if (config.clearPos && !config.destroy) dojo.style(mobile, { top: null, left: null, position: null });
+          if (config.destroy) this.destroy(mobile);
+          if (config.clearPos && !config.destroy) 
+            dojo.style(mobile, { top: null, left: null, position: null });
           resolve();
         });
-        //animation.play();
+        animation.play();
         //await this.bgaPlayDojoAnimation(animation);
-        this.bgaPlayDojoAnimation(animation);
+        //this.bgaPlayDojoAnimation(animation);
       });
     },
 
-    changeParent(mobile, new_parent, relation) {
+    changeParent(mobile, new_parent, clearStyles = false) {
       if (mobile === null) {
         console.error('attachToNewParent: mobile obj is null');
         return;
@@ -558,19 +392,16 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
         console.error('attachToNewParent: new_parent is null');
         return;
       }
-      if (typeof mobile == 'string') {
+      if (typeof mobile === 'string') {
         mobile = $(mobile);
       }
-      if (typeof new_parent == 'string') {
+      if (typeof new_parent === 'string') {
         new_parent = $(new_parent);
       }
-      if (typeof relation == 'undefined') {
-        relation = 'last';
-      }
-      var src = this.getBoundingClientRectIgnoreZoom(mobile);
+      var src = dojo.position(mobile);
       dojo.style(mobile, 'position', 'absolute');
-      dojo.place(mobile, new_parent, relation);
-      var tgt = this.getBoundingClientRectIgnoreZoom(mobile);
+      dojo.place(mobile, new_parent, 'last');
+      var tgt = dojo.position(mobile);
       var box = dojo.marginBox(mobile);
       var cbox = dojo.contentBox(mobile);
       var left = box.l + src.x - tgt.x;
@@ -578,6 +409,13 @@ define(['dojo', 'dojo/_base/declare', g_gamethemeurl + 'modules/js/vendor/nouisl
       this.positionObjectDirectly(mobile, left, top);
       box.l += box.w - cbox.w;
       box.t += box.h - cbox.h;
+      if (clearStyles) {
+        dojo.style(mobile, {
+          top: null,
+          left: null,
+          position: null,
+        });
+      }
       return box;
     },
 

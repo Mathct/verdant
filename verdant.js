@@ -33,6 +33,7 @@ function (dojo, declare) {
     const TOOLTIP_DELAY = 500;
     const ROWS = 3;
     const COLS = 5;
+    const HOUSE_PADDING = 13;
     const TABLE_WIDTH = 1200;
     const TABLE_HEIGHT = 800;
 
@@ -860,6 +861,7 @@ addScorepad: function() {
     // Créer le tableau de scores
     const scorepad = document.createElement('div');
     scorepad.id = 'final_scorepad_id';
+    //scorepad.classList.add('scorepad');
     scorepad.classList.add('scorepad', 'hidden');
 
     for (let row = 1; row <= rowCount; row++) {
@@ -1134,11 +1136,11 @@ addGoalCards:function() {
         room_goal_y = 2;
     }
     else if( room_goal_type == 11) {
-        room_goal_x = 3;
+        room_goal_x = 4;
         room_goal_y = 3;       
     }
     else if( room_goal_type == 12) {
-        room_goal_x = 4;
+        room_goal_x = 5;
         room_goal_y = 3;       
     }
     else if( room_goal_type == 13) {
@@ -1255,21 +1257,32 @@ addPotToMarket: function(pot) {
 
 addHouse: function (player) {
     const board = document.getElementById("board_id");
+    const playerColor = player.color.toLowerCase();
 
     // Applique la couleur du joueur en fond avec plus de clarté
-    const r = parseInt(player.color.substr(0, 2), 16);
-    const g = parseInt(player.color.substr(2, 2), 16);
-    const b = parseInt(player.color.substr(4, 2), 16);
+    // Convertir la couleur hex en RGB
+    const r = parseInt(playerColor.substr(0, 2), 16);
+    const g = parseInt(playerColor.substr(2, 2), 16);
+    const b = parseInt(playerColor.substr(4, 2), 16);
 
     // Crée une version éclaircie de la couleur avec un léger ajout de blanc
-    const lighterR = Math.min(r + 200, 255); 
-    const lighterG = Math.min(g + 200, 255);
-    const lighterB = Math.min(b + 200, 255);
+    let bgColor;
+
+    if (playerColor === "ffffff") {
+        // Si blanc, mettre un fond gris clair
+        bgColor = "rgba(230, 230, 230, 0.8)";
+    } else {
+        // Sinon, éclaircir simplement en ajoutant +100 aux valeurs RGB (max 255)
+        const lighterR = Math.min(r + 200, 255);
+        const lighterG = Math.min(g + 200, 255);
+        const lighterB = Math.min(b + 200, 255);
+        bgColor = `rgba(${lighterR}, ${lighterG}, ${lighterB}, 0.8)`;
+    }
 
 
     const houseHTML = `
         <div id="house_${player.id}" class="house-container" 
-            style="border-color: #${player.color}; background-color: rgba(${lighterR}, ${lighterG}, ${lighterB}, 0.8);">
+             style="border-color: #${playerColor}; background-color: ${bgColor};">
             
             <div id="house_name_${player.id}" class="house-name">
                 <span class="player-name" style="color: #${player.color}; 
@@ -1461,7 +1474,7 @@ resetCard: async function(card) {
     
     const targetElement = document.getElementById(`${card.genre}_market_deck`);
     // Lancer l'animation de déplacement vers le deck
-    await this.slide(newNode, targetElement, { phantom: false, destroy: true });
+    await this.slide(newNode, targetElement, { destroy: true });
     //slotContainer.remove();
 
 },
@@ -1499,7 +1512,7 @@ flipAndDrawCard: async function (card) {
     const targetElement = document.getElementById(`market_cell_${row}${col}`);
 
     // **Lancer le slide (draw)**
-    await this.slide(cardElement, targetElement, { phantom: false });
+    await this.slide(cardElement, targetElement);
 
     // Ajouter un tooltip spécifique en fonction du genre de la carte
     if (card.genre === 'plant') {
@@ -1536,7 +1549,7 @@ drawCard: async function(card) { // checked
     const targetElement = document.getElementById(`market_cell_${row}${col}`);
 
     // **Lancer le slide**
-    await this.slide(cardElement, targetElement, { phantom: false });
+    await this.slide(cardElement, targetElement);
 
     if( card.genre == 'plant') {
         this.addCustomTooltip(cardElement.id, this.getTooltipPlantContent(card.type, card.id));
@@ -1573,7 +1586,7 @@ drawTile: async function(tile) { // checked
     const targetElement = document.getElementById(`market_cell_3${col}`);
 
 
-    await this.slide(tileElement, targetElement, { phantom: false });
+    await this.slide(tileElement, targetElement);
 
     await this.addCustomTooltip(tileElement.id, this.getTooltipTileContent(tile.type, tileElement.id));
 },
@@ -1584,6 +1597,8 @@ addThumbOnCard: function(card, value = 1) {
     //const genre = old_genre == 'room' ? 'plant' : 'room';
 
     const genre = card.genre;
+
+    console.log( 'thumb_counter before', this.thumb_counter);
 
     if( card.thumb > 0) {
         this.thumb_counter[`${genre}_${card.type}`].incValue(value);
@@ -1605,8 +1620,10 @@ addThumbOnCard: function(card, value = 1) {
         this.thumb_counter[`${genre}_${card.type}`].create(`nb_thumbs_${genre}_${card.type}`);
         this.thumb_counter[`${genre}_${card.type}`].toValue(value);
         // TODO ATTENTION A VIRER DU TABLEAU QUAND ON DONNE LES POUCES
+        console.log( 'thumb_counter created', `${genre}_${card.type}`);
+        console.log( 'thumb_counter value', this.thumb_counter[`${genre}_${card.type}`]);
     }
-
+    console.log( 'thumb_counter after', this.thumb_counter);
 
 },
 
@@ -1688,7 +1705,7 @@ animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checke
 
         cardElement.insertAdjacentHTML('beforeend', housePotHTML);
 
-        const oldPotElement = document.getElementById(pot_origin);
+        const oldPotElement = document.getElementById(pot_origin).firstElementChild;
         if( pot_origin == 'market_cell_15')  {
             oldPotElement.classList.add("sprite-disappear");
         }
@@ -1752,6 +1769,9 @@ moveBackThumbs: async function() {
         if( card) {
             console.log( 'card', card);
             const thumbId = `thumbs_${card.id}`;
+            console.log( 'thumbId', thumbId);
+            console.log( 'thumb_counter', this.thumb_counter);
+            console.log( 'thumb_counter thumbId', this.thumb_counter[card.id]);
     
             // Vérifier si le compteur existe pour cette carte
             if (this.thumb_counter[card.id]) {
@@ -1765,10 +1785,12 @@ moveBackThumbs: async function() {
                     // Chercher la première cellule disponible pour y déplacer les pouces
                     for (let i = 4; i >= 2; i--) {
                         const targetCell = document.getElementById(`${prefix === "plant" ? "market_cell_2" : "market_cell_4"}${i}`);
+                        console.log( 'targetCell', targetCell.id);
                         if (targetCell) {
                             const targetCard = targetCell.firstElementChild;
-
+                            console.log( 'targetCard', targetCard);
                             if (targetCard) {
+                                console.log( 'targetCardId', targetCard.id);
                                 const targetThumbId = `thumbs_${targetCard.id}`;
 
                                 // Vérifier si cette carte cible a déjà des pouces
@@ -1793,6 +1815,7 @@ moveBackThumbs: async function() {
 
                     // Une fois déplacés, supprimer le compteur de pouces de la carte d'origine
                     delete this.thumb_counter[card.id];
+                    console.log( 'thumb supprimé ', card.id);
                 }
             }
         }
@@ -1848,9 +1871,9 @@ moveAllRight: async function() {
 
                     if (nextCell) {
                         // Déplacer la carte avec un léger décalage entre chaque animation
-                        const movePromise = this.slide(card, nextCell, { phantom: false }).then(() => {
+                        const movePromise = this.slide(card, nextCell).then(() => {
                             // Gestion des pouces après l'animation
-                            const thumbId = `thumbs_${card.id}`;
+                        /*    const thumbId = `thumbs_${card.id}`;
                             if (document.getElementById(thumbId)) {
                                 const nbThumbs = this.thumb_counter[card.id]?.getValue() || 0;
                                 if (nbThumbs > 0) {
@@ -1865,7 +1888,7 @@ moveAllRight: async function() {
                                         delete this.thumb_counter[card.id];
                                     }
                                 }
-                            }
+                            }*/
                         });
                         movePromises.push(movePromise);
                     }
@@ -1897,7 +1920,7 @@ addNewPot: async function(pot) {
 
     const targetElement = document.getElementById(`market_cell_12`);
 
-    await this.slide(potElement, targetElement, { phantom: false });
+    await this.slide(potElement, targetElement);
 
     this.pot_deck_counter[pot.type].incValue(-1);
 },
@@ -1978,13 +2001,55 @@ showHelpModal: function() {
     const modal = document.createElement('div');
     modal.id = 'helpModal';
     modal.className = 'modal';
-    modal.innerHTML = `
-        <div class="modal-content">
+
+
+    let html = '<div class="modal-content">';
+           html += '<span class="close">&times;</span>';
+           html += '<div class="tooltip_content">';
+
+    // Ajout des informations à droite
+          html += `<div class="info_container">`;
+
+          html += "<div class='tooltip_bigtitle'>"+_('Turn Summary')+"</div>";
+
+          html += "<div class='tooltip_subtitle'>"+_('Select a Card and a Token')+"</div>";
+          html += "<div class='tooltip_description'>"+_('You must select 1 Item Token and 1 Card (Plant or Room) from the same column.')+"</div>";
+
+          html += "<br><div class='tooltip_subtitle'>"+_('Place the Card into your home')+"</div>";
+          html += "<div class='tooltip_description'>"+_('You will be creating a 5x3 grid of cards in your personal play area, your Home!')+"</div>";
+          html += "<div class='tooltip_description'>"+_('Cards must be placed orthogonally adjacent to other cards. Plant Cards must be placed next to Room Cards, and vice versa, in a checkerboard pattern.')+"</div>";
+
+          html += "<br><div class='tooltip_subtitle'>"+_('Check lightning Conditions and collect Verdancy')+"</div>";
+          html += "<div class='tooltip_description'>"+_('If a match between the Lightning condition on a Room any any of the preferred ones ont the Plant Card is made when placing a Card, then 1 Verdancy is added to the Plant Card.')+"</div>";
+
+          html += "<br><div class='tooltip_subtitle'>"+_('Place/Use Items')+"</div>";
+          html += "<div class='tooltip_description'>"+_('You may place a Pet/Furniture on any Room with a bonus scoring if their type matches.')+"</div>";
+           html += "<div class='tooltip_description'>"+_('You may use a Nurture Item Token to add Verdancy on one or several Plants.')+"</div>";
+         
+          html += "<br><div class='tooltip_subtitle'>"+_('Completing Plants and adding Pots')+"</div>";
+           html += "<div class='tooltip_description'>"+_('Whenever you complete a plant by adding enough Verdancy, the Plant is potted with the highest value Bonus Pot Token.')+"</div>";
+
+            html += "<br><div class='tooltip_subtitle'>"+_('Store any unused Item Token and check Green Thumb Token limit')+"</div>";
+           html += "<div class='tooltip_description'>"+_('You may store one single Item Token in your Storage location. The others remaining are discarded!')+"</div>";
+           html += "<div class='tooltip_description'>"+_('You may hold a maximum of 5 Green Thumb Tokens from one turn to the next. The excess is discarded back to the supply.')+"</div>";
+
+            html += "<br><div class='tooltip_subtitle'>"+_('Refill the Market')+"</div>";
+           html += "<div class='tooltip_description'>"+_('A Card and a Token are added from the appropriate deck and bag to the Market and your turn is over.')+"</div>";
+
+
+          html += '</div>'
+
+        html += '</div></div>';
+
+    modal.innerHTML = html;
+/*        <div class="modal-content">
             <span class="close">&times;</span>
-            <h2>Aide</h2>
+            let html = '<div class="tooltip_content">'
             <p>Besoin d'aide ? Voici quelques instructions...</p>
         </div>
-    `;
+    `;</div>*/
+
+
     document.body.appendChild(modal);
 
     // Sélection des éléments de la modale
@@ -2059,7 +2124,7 @@ setupTooltips:function () {
     this.addCustomTooltip( `score_line_7`, html);
     html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Decorator Bonus')+"</span></div>";
     this.addCustomTooltip( `score_line_8`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Plant Goals Bonus')+"</span></div>";
+    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Plant Goal Bonus')+"</span></div>";
     this.addCustomTooltip( `score_line_9`, html);
     html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Item Goal Bonus')+"</span></div>";
     this.addCustomTooltip( `score_line_10`, html);   
@@ -2142,7 +2207,7 @@ getTooltipRoomContent : function(type, id) {
    
     // Afficher les informations des rooms 
     const plant_type = this.gamedatas.plant_types[room_infos.type].name;
-    html += `<br><span class='tooltip_title'>${_(plant_type)}</span>`;
+    html += `<span class='tooltip_title'>${_(plant_type)}</span>`;
 
     
     const lightning_types = ["full-sun", "semi-shade", "shade"];
@@ -2452,7 +2517,8 @@ notif_moveCardToHouse: async function(args) {
         // market card is removed
         if( args.card_before.location_arg != 99) {
             const element = document.getElementById(market_location);
-            element.remove();
+            this.destroy(element);
+            //element.remove();
         }
 
         const possibleElements = document.querySelectorAll('.possible_in_house');
@@ -2496,7 +2562,7 @@ notif_moveCardToHouse: async function(args) {
             const slotContainer = document.getElementById(`slot_${house_location}_${player_id}`);
            
            // card is moved
-            await this.slide(market_location, slotContainer, {phantom: false});
+            await this.slide(market_location, slotContainer);
         }
 
 
@@ -2522,7 +2588,7 @@ notif_moveTileToHouse: async function(args) {
     tileElement.classList.remove("selectable", "selected");
 
     // tile is moved in room and centered
-    await this.slide(tileElement, destinationElement, {phantom: false});
+    await this.slide(tileElement, destinationElement);
     tileElement.classList.add('tile-house');
 },
 
@@ -2548,13 +2614,18 @@ notif_moveTileToReserve: async function(args) {
     destinationElement.classList.remove("tooltipable");
     tileElement.classList.remove("selectable", "selected");
 
-    await this.slide(tileElement, destinationElement, {phantom: false});
+    await this.slide(tileElement, destinationElement);
 },
 
 
-notif_addGreenThumb: async function(args) {
-    this.thumb_counter[args.player_id].incValue(1);
+notif_addGreenThumbs: async function(args) {
+    this.thumb_counter[args.player_id].incValue(args.nb_thumbs);
 },
+
+notif_setGreenThumbs: async function(args) {
+    this.thumb_counter[args.player_id].setValue(args.nb_thumbs);
+},
+
 
 notif_addVerdancy: async function(args) {
 
@@ -2714,7 +2785,7 @@ notif_refillMarketSolo: async function(args) {
 
     // Attendre que toutes les animations soient terminées
     await Promise.all([potPromise, ...cardPromises, ...tilePromises]);
-    console.log('thumbs4',this.thumb_counter);
+    console.log('thumbs after refill solo',this.thumb_counter);
     
 },
 
@@ -2838,84 +2909,6 @@ notif_score: async function( args ){
 /**
  * Toggle help mode
  */
-/*toggleHelpMode(b) {
-    if (b) 
-        this.activateHelpMode();
-    else 
-        this.desactivateHelpMode();
-},
-
-activateHelpMode() {
-    this._helpMode = true;
-    dojo.addClass('ebd-body', 'help-mode');
-    this._displayedTooltip = null;
-    document.body.addEventListener('click', this.closeCurrentTooltip.bind(this));
-},
-
-desactivateHelpMode() {
-    this.closeCurrentTooltip();
-    this._helpMode = false;
-    dojo.removeClass('ebd-body', 'help-mode');
-    document.body.removeEventListener('click', this.closeCurrentTooltip.bind(this));
-},
-
-closeCurrentTooltip() {
-    if (!this._helpMode) 
-        return;
-    if (this._displayedTooltip == null) 
-        return;
-    else {
-        this._displayedTooltip.close();
-        this._displayedTooltip = null;
-    }
-},
-*/
-    /*
-    * Custom connect that keep track of all the connections
-    *  and wrap clicks to make it work with help mode
-    */
-/*
-
-connect(node, action, callback) {
-    this._connections.push(dojo.connect($(node), action, callback));
-},
-
-onClick(node, callback, temporary = true) {
-    let safeCallback = (evt) => {
-        evt.stopPropagation();
-        if (this.isInterfaceLocked()) 
-            return false;
-        if (this._helpMode) 
-            return false;
-        callback(evt);
-    };
-
-    if (temporary) {
-        this.connect($(node), 'click', safeCallback);
-        dojo.removeClass(node, 'unselectable');
-        dojo.addClass(node, 'selectable');
-        this._selectableNodes.push(node);
-    } else {
-        dojo.connect($(node), 'click', safeCallback);
-    }
-},
-*/
-    /**
-     * Tooltip to work with help mode
-     */
-
-
-/*******************************
- ****** UTILS TISAAC *******
- ******************************/
-
-
-/*******************************
- ****** HELP MODE TISAAC *******
-    ******************************/
-/**
- * Toggle help mode
- */
 toggleHelpMode(b) {
     if (b) 
         this.activateHelpMode();
@@ -2979,20 +2972,7 @@ onClick(node, callback, temporary = true) {
     /**
      * Tooltip to work with help mode
      */
-registerCustomTooltip(html, id = null) {
-    id = id || this.game_name + '-tooltipable-' + this._customTooltipIdCounter++;
-    this._registeredCustomTooltips[id] = html;
-    return id;
-},
 
-attachRegisteredTooltips() {
-    Object.keys(this._registeredCustomTooltips).forEach((id) => {
-        if ($(id)) {
-            this.addCustomTooltip(id, this._registeredCustomTooltips[id], { forceRecreate: true });
-        }
-    });
-    this._registeredCustomTooltips = {};
-},
 
 addCustomTooltip(id, html, config = {}) {
     config = Object.assign(
