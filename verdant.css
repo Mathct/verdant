@@ -34,7 +34,6 @@
     --tile-width: 50px;
     --minipot-width: 32px;
     --lightning-width: 24px;
-
 }
 
 body {
@@ -42,12 +41,6 @@ body {
     background-image: url("img/VE_Green_BG.jpg");
     background-repeat: repeat; /* Répète l'image dans toutes les directions */
     background-size: auto; /* Taille originale de l'image */
-
-/*    background-image: url('img/VE_Market_Background.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;*/
-
 }
 
 
@@ -263,7 +256,6 @@ font-family: "MyriadPro";
   z-index: 1;
   position: relative;
   /*background-color:#2db2b6;*/
-  
 }
 
 /*                       _        _    */
@@ -334,8 +326,6 @@ font-family: "MyriadPro";
   gap: var(--grid-gap);
   justify-content: center;
   align-items: center;
-  padding: var(--house-padding);
-  /*background-color: lightslategray;*/
   place-items: center;
 }
 

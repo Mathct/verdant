@@ -3207,6 +3207,7 @@ class Game extends \Table
                         self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
                     } else {
                         $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+                        $delta = $max_verdoiement - $before_verdoiement;
 
                         if (game::$instance->getGameStateValue('last_turn') != 1) {
                             if ($nbre_pot_market == 4) {

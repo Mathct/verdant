@@ -381,7 +381,7 @@ class PendingSolo extends APP_GameClass
 
 
 
-            $ret['buttons'][] = 'pass';
+            $ret['buttons'][] = 'store';
         }
 
 
@@ -393,7 +393,7 @@ class PendingSolo extends APP_GameClass
     {
         if ($varg1 == 'thumb') {
             game::$instance->addPending($this->player_id, "UseThumb", 2, "NormalTurnStep3_" . $parg1);
-        } elseif ($varg1 == 'pass') {
+        } elseif ($varg1 == 'store') {
 
             game::$instance->addPending($this->player_id, "ChooseReserve", $parg1);
         } elseif ($varg1 == null) {
@@ -1263,7 +1263,7 @@ class PendingSolo extends APP_GameClass
 
 
 
-        if (($tile_market_type != null) && ($tile_reserve_type != null)) {
+        if (($tile_market_type != null) && ($tile_reserve_type != null) && ($tile_market_type != $tile_reserve_type)) {
 
             $ret["selectable"][] = 'tile_' . $tile_market_id;
             $ret["selectable"][] = 'tile_' . $tile_reserve_id;
@@ -1329,7 +1329,7 @@ class PendingSolo extends APP_GameClass
 
                     )
                 );
-            } elseif (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type)) {
+            } elseif (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type) || ($tile_market_type == $tile_reserve_type)) {
                 $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_location = 'market' AND card_location_arg = '{$parg1}'");
 
                 game::$instance->tile->moveCard($tile_market_id, 'discard');
@@ -1392,6 +1392,8 @@ class PendingSolo extends APP_GameClass
         $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
         $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
 
+        if($tile_market_type != $tile_reserve_type)
+        {
         if (($parg2 == "tile_" . $tile_market_id) || ($parg2 == "tilebt_" . $tile_market_type)) {
             $ret["selected"][] = 'tile_' . $tile_market_id;
             
@@ -1399,6 +1401,7 @@ class PendingSolo extends APP_GameClass
 
         if (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type)) {
             $ret["selected"][] = 'tile_' . $tile_reserve_id;
+        }
         }
 
         
@@ -1457,7 +1460,7 @@ class PendingSolo extends APP_GameClass
 
                     )
                 );
-            } elseif (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type)) {
+            } elseif (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type) || ($tile_market_type == $tile_reserve_type)) {
                 $info_tile = game::$instance->getTile("card_location = 'market' AND card_location_arg = '{$parg1}'");
 
                 game::$instance->tile->moveCard($tile_market_id, 'discard');
@@ -1574,7 +1577,9 @@ class PendingSolo extends APP_GameClass
 
 
 
-        // discard dernière colonne du market et decalage/suppression des pouces
+        // discard dernière colonne du market et decalage/suppression des pouces si >= 3 sur une carte
+
+        $remove_thumbs = array();
 
         $plant_discard = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_location ='market' AND card_location_arg = 4");
         if ($plant_discard != null) {
@@ -1586,6 +1591,9 @@ class PendingSolo extends APP_GameClass
             $new_thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_id ='{$plant_dispo}'");
             if ($new_thumb >= 3) {
                 self::DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = {$plant_dispo}");
+                $plant_thumb = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id ='{$plant_dispo}'");
+                $plant_thumb['genre'] = 'plant';
+                $remove_thumbs[] = $plant_thumb;
             }
         }
 
@@ -1599,6 +1607,9 @@ class PendingSolo extends APP_GameClass
             $new_thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_id ='{$room_dispo}'");
             if ($new_thumb >= 3) {
                 self::DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = {$room_dispo}");
+                $room_thumb = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id ='{$room_dispo}'");
+                $room_thumb['genre'] = 'room';
+                $remove_thumbs[] = $room_thumb;
             }
         }
 
@@ -1612,9 +1623,7 @@ class PendingSolo extends APP_GameClass
             self::DbQuery("UPDATE pot set card_location = 'discard' WHERE card_id = {$pot_discard}");
         }
 
-
-
-
+        
 
         /// Decalage vers la droite de tout le  market
 
@@ -1683,7 +1692,8 @@ class PendingSolo extends APP_GameClass
                 'card_thumb' => $info_opposite_card,
                 'cards_pick' => $cards_pick,
                 'tiles_pick' => $tiles_pick,
-                'new_pot' => $new_pot
+                'new_pot' => $new_pot,
+                'thumbs_removed' => $remove_thumbs,
 
             )
         );
@@ -2195,7 +2205,7 @@ class PendingSolo extends APP_GameClass
         $ret['title'] = clienttranslate('${actplayer} must take an action');
         $ret['titleyou'] = clienttranslate('End of Game');
 
-        $ret['buttons'][] = 'pass';
+        
 
 
         return $ret;
@@ -2203,7 +2213,6 @@ class PendingSolo extends APP_GameClass
 
     function EndOfGame($parg1, $parg2, $varg1, $varg2)
     {
-        game::$instance->giveExtraTime($this->player_id);
-        game::$instance->addPendingFirst($this->player_id, "NormalTurn");
+        game::$instance->gamestate->nextState('end');
     }
 }

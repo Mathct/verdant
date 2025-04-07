@@ -11,20 +11,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
      * Constructor
      */
     constructor() {
-      this._notifications = [];
-      this._activeStates = [];
-      this._connections = [];
-      this._selectableNodes = [];
-
-      this.canceledNotifFeature = false;
-      this._notif_uid_to_log_id = {};
-      this._last_notif = null;
-
-
-
-
-
-
  
 
 
@@ -33,11 +19,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
         height: '100vh',
         position: 'fixed',
       });
-
-      this._displayNotifsOnTop = true;
-      this._displayNotifsOnTopWhenGameState = true;
-      this._hideNotifsWhenMultiActive = false;
-      this._displayRestartButtons = true;
     },
 
 
@@ -76,8 +57,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
 
     onLoadingComplete() {
       debug('Loading complete');
-      if (this.canceledNotifFeature) 
-        this.cancelLogs(this.gamedatas.canceledNotifIds);
     },
 
 
@@ -119,8 +98,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
      */
     onEnteringState(stateName, args) {
       debug('Entering state: ' + stateName, args);
-      if (this.isFastMode()) return;
-      if (this._activeStates.includes(stateName) && !this.isCurrentPlayerActive()) return;
+      if (this.isFastMode()) 
+        return;
 
       // Call appropriate method
       var methodName = 'onEnteringState' + stateName.charAt(0).toUpperCase() + stateName.slice(1);
@@ -132,7 +111,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
      * Check change of activity
      */
     onUpdateActionButtons(stateName, args) {
-
+        let status = this.isCurrentPlayerActive();
         // Call appropriate method
         var methodName = 'onUpdateActivity' + stateName.charAt(0).toUpperCase() + stateName.slice(1);
         if (this[methodName] !== undefined) this[methodName](args, status);
@@ -148,7 +127,8 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
      */
     onLeavingState(stateName) {
       debug('Leaving state: ' + stateName);
-      if (this.isFastMode()) return;
+      if (this.isFastMode()) 
+        return;
       //this.clearPossible();
 
       // Call appropriate method
@@ -164,38 +144,15 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
     /*
      * setupNotifications
      */
-    getVisibleTitleContainer() {
-      function isVisible(elem) {
-        return !!(elem.offsetWidth || elem.offsetHeight || elem.getClientRects().length);
-      }
-
-      if (isVisible($('pagemaintitletext'))) {
-        return $('pagemaintitletext');
-      } else {
-        return $('gameaction_status');
-      }
-    },
 
 
     setupNotifications() {
-      console.log("setupNotifications",this._notifications); 
+      console.log("setupNotifications"); 
      
       //2024 NEw Framework function
       this.bgaSetupPromiseNotifications( {
         minDuration: 900, // because slide 800
-        //minDurationNoText: 500,
-        //logger: debug,
-        /*onStart: (notifName, msg, args) => {
-          if (this._displayNotifsOnTop && msg != '') {
-            $('gameaction_status').innerHTML = msg;
-            $('pagemaintitletext').innerHTML = msg;
-            //this.removeAllActionButtons();
-          }
-          //this.clearPreAnimation();
-        }, 
-        onEnd: (notifName, msg, args) => { 
-          //To see log 
-        },*/
+        logger: debug
       });
     },
 
@@ -474,74 +431,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
     },
 
 
-    /**
-     * Own counter implementation that works with replay
-     */
-    createCounter(id, defaultValue = 0, linked = null) {
-      if (!$(id)) {
-        console.error('Counter : element does not exist', id);
-        return null;
-      }
-
-      let game = this;
-      let o = {
-        span: $(id),
-        linked: linked ? $(linked) : null,
-        targetValue: 0,
-        currentValue: 0,
-        speed: 100,
-        getValue() {
-          return this.targetValue;
-        },
-        setValue(n) {
-          this.currentValue = +n;
-          this.targetValue = +n;
-          this.span.innerHTML = +n;
-          this.span.dataset.counter = +n;
-          if(this.currentValue==0) this.span.parentNode.classList.add("counter_empty");
-          else this.span.parentNode.classList.remove("counter_empty");
-          if (this.linked) this.linked.innerHTML = +n;
-        },
-        toValue(n) {
-          if (!game.bgaAnimationsActive()) {
-            this.setValue(n);
-            return;
-          }
-
-          this.targetValue = +n;
-          if (this.currentValue != n) {
-            this.span.classList.add('counter_in_progress');
-            setTimeout(() => this.makeCounterProgress(), this.speed);
-          }
-        },
-        goTo(n, anim) {
-          if (anim) this.toValue(n);
-          else this.setValue(n);
-        },
-        incValue(n) {
-          let m = +n;
-          this.toValue(this.targetValue + m);
-        },
-        makeCounterProgress() {
-          if (this.currentValue == this.targetValue) {
-            setTimeout(() => this.span.classList.remove('counter_in_progress'), this.speed);
-            return;
-          }
-
-          let step = Math.ceil(Math.abs(this.targetValue - this.currentValue) / 5);
-          this.currentValue += (this.currentValue < this.targetValue ? 1 : -1) * step;
-          this.span.innerHTML = this.currentValue;
-          this.span.dataset.counter = this.currentValue;
-          if(this.currentValue==0) this.span.parentNode.classList.add("counter_empty");
-          else this.span.parentNode.classList.remove("counter_empty");
-          if (this.linked) this.linked.innerHTML = this.currentValue;
-          setTimeout(() => this.makeCounterProgress(), this.speed);
-        },
-      };
-      o.setValue(defaultValue);
-      return o;
-    },
-
 
     /****************
      ***** UTILS *****
@@ -550,21 +439,6 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
     strReplace(str, subst) {
       return dojo.string.substitute(str, subst);
     },
-
-
-
-    translate(t) {
-      if (typeof t === 'object') {
-        return this.format_string_recursive(_(t.log), t.args);
-      } else {
-        return this.format_string_recursive(_(t), {});
-      }
-    },
-
-    fsr(log, args) {
-      return this.format_string_recursive(log, args);
-    },
-
 
     //Taken from thoun Ancient Knowledge : reduce a div text size to match a specific zone (on a card for example)
     //EXAMPLE <span class='A'><div class='reduceToFit'>TEST abcdef</div></span> where .A elements define a width

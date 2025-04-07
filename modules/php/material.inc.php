@@ -99,7 +99,7 @@ $this->_PLANT_GOAL_CARDS = [
      7 => [
           "name" => clienttranslate('Perfect Conditions'),
           "points" => 1,
-          "description" => clienttranslate('for each plant with perfectly matching lightning conditions')
+          "description" => clienttranslate('for each plant with perfectly matching lighting conditions')
      ],
      8 => [
           "name" => clienttranslate('Competitive Collections'),
@@ -114,7 +114,7 @@ $this->_PLANT_GOAL_CARDS = [
      10 => [
           "name" => clienttranslate('Against All Odds'),
           "points" => 2,
-          "description" => clienttranslate('for each plant that has no matching lightning conditions')
+          "description" => clienttranslate('for each plant that has no matching lighting conditions')
      ],
      11 => [
           "name" => clienttranslate('Loved Lines'),
@@ -124,7 +124,7 @@ $this->_PLANT_GOAL_CARDS = [
      12 => [
           "name" => clienttranslate('Narrow Necessities'),
           "points" => 1,
-          "description" => clienttranslate('for each completed plant that prefers only a single lightning condition')
+          "description" => clienttranslate('for each completed plant that prefers only a single lighting condition')
      ],
      13 => [
           "name" => clienttranslate('One True Love'),

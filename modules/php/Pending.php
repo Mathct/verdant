@@ -381,7 +381,7 @@ class Pending extends APP_GameClass
 
 
 
-            $ret['buttons'][] = 'pass';
+            $ret['buttons'][] = 'store';
         }
 
 
@@ -393,7 +393,7 @@ class Pending extends APP_GameClass
     {
         if ($varg1 == 'thumb') {
             game::$instance->addPending($this->player_id, "UseThumb", 2, "NormalTurnStep3_" . $parg1);
-        } elseif ($varg1 == 'pass') {
+        } elseif ($varg1 == 'store') {
 
             game::$instance->addPending($this->player_id, "ChooseReserve", $parg1);
         } elseif ($varg1 == null) {
@@ -1281,7 +1281,7 @@ class Pending extends APP_GameClass
 
 
 
-        if (($tile_market_type != null) && ($tile_reserve_type != null)) {
+        if (($tile_market_type != null) && ($tile_reserve_type != null) && ($tile_market_type != $tile_reserve_type) ) {
 
             $ret["selectable"][] = 'tile_' . $tile_market_id;
             $ret["selectable"][] = 'tile_' . $tile_reserve_id;
@@ -1348,7 +1348,7 @@ class Pending extends APP_GameClass
 
                     )
                 );
-            } elseif (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type)) {
+            } elseif (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type) || ($tile_market_type == $tile_reserve_type)) {
                 $info_tile = game::$instance->getTile("card_location = 'market' AND card_location_arg = '{$parg1}'");
 
                 game::$instance->tile->moveCard($tile_market_id, 'discard');
@@ -1412,6 +1412,8 @@ class Pending extends APP_GameClass
         $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
         $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
 
+        if($tile_market_type != $tile_reserve_type)
+        {
         if (($parg2 == "tile_" . $tile_market_id) || ($parg2 == "tilebt_" . $tile_market_type)) {
             $ret["selected"][] = 'tile_' . $tile_market_id;
             
@@ -1419,6 +1421,7 @@ class Pending extends APP_GameClass
 
         if (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type)) {
             $ret["selected"][] = 'tile_' . $tile_reserve_id;
+        }
         }
 
         
@@ -1477,7 +1480,7 @@ class Pending extends APP_GameClass
 
                     )
                 );
-            } elseif (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type)) {
+            } elseif (($parg2 == "tile_" . $tile_reserve_id) || ($parg2 == "tilebt_" . $tile_reserve_type) || ($tile_market_type == $tile_reserve_type)) {
                 $info_tile = game::$instance->getTile("card_location = 'market' AND card_location_arg = '{$parg1}'");
 
                 game::$instance->tile->moveCard($tile_market_id, 'discard');
@@ -2094,7 +2097,7 @@ class Pending extends APP_GameClass
         $ret['title'] = clienttranslate('${actplayer} must take an action');
         $ret['titleyou'] = clienttranslate('End of Game');
 
-        $ret['buttons'][] = 'pass';
+        
 
 
         return $ret;
@@ -2102,7 +2105,6 @@ class Pending extends APP_GameClass
 
     function EndOfGame($parg1, $parg2, $varg1, $varg2)
     {
-        game::$instance->giveExtraTime($this->player_id);
-        game::$instance->addPendingFirst($this->player_id, "NormalTurn");
+        game::$instance->gamestate->nextState('end');
     }
 }

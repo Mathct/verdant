@@ -279,8 +279,12 @@ onUpdateActionButtons: function( stateName, args ) {
                     if(args.buttons[nb] == "reset") {
                         this.addActionButton( 'reset', _("Reset selections") ,'onOpResetSelection', null, null, 'red' );
                     }
+                    if(args.buttons[nb] == "store") {
+                        this.addActionButton( 'store', _("Store") ,'onOpButton', null, null, 'red' );
+                    }
                     if(args.buttons[nb] == "yes") {
                         this.addActionButton( 'yes', _("Yes") ,'onOpButton', null, null, 'blue' );
+                        this.startActionTimer('yes', 5, 1);
                     }
                     if(args.buttons[nb] == "no") {
                         this.addActionButton( 'no', _("No") ,'onOpButton', null, null, 'red' );
@@ -902,7 +906,7 @@ addScorepad: function() {
     }
 
     // Ajouter le tableau de scores dans le DOM
-    document.getElementById("scorepad_id").appendChild(scorepad);
+    document.getElementById("board_id").appendChild(scorepad);
 
 
     // Ajout des avatars
@@ -1722,10 +1726,14 @@ animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checke
                 oldPotElement.remove();
             }
             else {
-                const pot_sprite = pot_origin.slice(-1);
-                this.pot_discard_counter[pot_sprite].incValue(-1);
+                if( pot_origin == 'pot_deck_0') { // round13
+                    this.pot_deck_counter[0].incValue(-1);
+                }
+                else {
+                    const pot_sprite = pot_origin.slice(-1);
+                    this.pot_discard_counter[pot_sprite].incValue(-1);
+                }
             }
-            
             resolve();
         }, { once: true });
     });
@@ -1798,9 +1806,9 @@ moveBackThumbs: async function() {
                                     this.thumb_counter[targetCard.id].incValue(nbThumbs);
 
                                     // Si la carte a 3 pouces ou plus, les supprimer
-                                    if (this.thumb_counter[targetCard.id].getValue() >= 3) {
+                                /*    if (this.thumb_counter[targetCard.id].getValue() >= 3) {
                                         await this.animateAndRemoveToken(targetThumbId);
-                                    }
+                                    }*/
                                 } else {
                                     // Ajouter les pouces à la carte cible s'il n'y en a pas encore
                                     const cardIdSuffix = targetCard.id.split('_')[1]; // Ex: '21' pour 'plant_21'
@@ -1829,6 +1837,15 @@ moveBackThumbs: async function() {
         processThumbs("plant", "market_cell_25"),
         processThumbs("room", "market_cell_45")
     ]);
+},
+
+removeThumbOnCard: async function (card) {
+
+    console.log('thumb_counter',this.thumb_counter);
+    const targetThumbId = `thumbs_${card.genre}_${card.type}`;
+    await this.animateAndRemoveToken(targetThumbId);
+    delete this.thumb_counter[`${card.genre}_${card.type}`];
+
 },
 
 removeFourthColumn: async function () {
@@ -2019,8 +2036,8 @@ showHelpModal: function() {
           html += "<div class='tooltip_description'>"+_('You will be creating a 5x3 grid of cards in your personal play area, your Home!')+"</div>";
           html += "<div class='tooltip_description'>"+_('Cards must be placed orthogonally adjacent to other cards. Plant Cards must be placed next to Room Cards, and vice versa, in a checkerboard pattern.')+"</div>";
 
-          html += "<br><div class='tooltip_subtitle'>"+_('Check lightning Conditions and collect Verdancy')+"</div>";
-          html += "<div class='tooltip_description'>"+_('If a match between the Lightning condition on a Room any any of the preferred ones ont the Plant Card is made when placing a Card, then 1 Verdancy is added to the Plant Card.')+"</div>";
+          html += "<br><div class='tooltip_subtitle'>"+_('Check lighting Conditions and collect Verdancy')+"</div>";
+          html += "<div class='tooltip_description'>"+_('If a match between the Lighting condition on a Room any any of the preferred ones ont the Plant Card is made when placing a Card, then 1 Verdancy is added to the Plant Card.')+"</div>";
 
           html += "<br><div class='tooltip_subtitle'>"+_('Place/Use Items')+"</div>";
           html += "<div class='tooltip_description'>"+_('You may place a Pet/Furniture on any Room with a bonus scoring if their type matches.')+"</div>";
@@ -2275,7 +2292,7 @@ getTooltipPlantContent : function(type, id) {
     html += `
         <br>
         <div class="lightning-container">
-            <span class='tooltip_desc'>${_("Lightnings:")}</span>
+            <span class='tooltip_desc'>${_("Lightings:")}</span>
             ${lightning_html}
         </div>
     `;
@@ -2284,7 +2301,7 @@ getTooltipPlantContent : function(type, id) {
     html += `<br><span class='tooltip_desc'>${_("Verdancy needed: " + verdancy)}</span>`;
 
     const award = plant_infos.points;
-    html += `<br><span class='tooltip_desc'>${_("Completed plant award: " + award)}</span>`;
+    html += `<br><span class='tooltip_desc'>${_("Plant award: " + award)}</span>`;
 
     const latin = plant_infos.latin_name;
     html += `<br><br><span class='tooltip_info'>${_(latin)}</span>`;
@@ -2451,23 +2468,27 @@ getTooltipRoomGoalContent : function( room_goal_type, id) {
 },
 
 onScreenWidthChange: function () {
-/*        var gameWidth = TABLE_WIDTH;
-        var gameHeight = TABLE_HEIGHT;
-
-        var horizontalScale = document.getElementById('game_play_area').clientWidth / gameWidth;
-        var verticalScale = (window.innerHeight - 0) / gameHeight;
-
-        var scale = Math.min(1, horizontalScale, verticalScale);
-
-        var resized_div = document.getElementById('resized_id');
-        var play_area_height = dojo.marginBox("board_id").h;
-
-        resized_div.style.transform = scale === 1 ? '' : "scale(".concat(scale, ")");
-
-        dojo.style("resized_id",'height', (play_area_height*scale)+'px');      
-*/
+    this.updateLayout();
 },
 
+updateLayout: function () {
+/*        
+    var gameWidth = TABLE_WIDTH;
+    var gameHeight = TABLE_HEIGHT;
+
+    var horizontalScale = document.getElementById('game_play_area').clientWidth / gameWidth;
+    var verticalScale = (window.innerHeight - 0) / gameHeight;
+
+    var scale = Math.min(1, horizontalScale, verticalScale);
+
+    var resized_div = document.getElementById('resized_id');
+    var play_area_height = dojo.marginBox("board_id").h;
+
+    resized_div.style.transform = scale === 1 ? '' : "scale(".concat(scale, ")");
+
+    dojo.style("resized_id",'height', (play_area_height*scale)+'px');      
+*/
+},
 
 ///////////////////////////////////////////////////////////////////////////////// 
 //       _   _       _   _  __ _           _   _                 
@@ -2671,7 +2692,6 @@ notif_addVerdancy: async function(args) {
 },
 
 notif_addVerdancySolo: async function(args) {
-
     // s'il y a déjà de la Verdancy, on augmente le Counter.
     // s'il n'y a pas de Verdancy, on ajoute le sprite avec la valeur.
 
@@ -2732,7 +2752,6 @@ notif_refillMarket: async function(args) {
 
 
 notif_refillMarketSolo: async function(args) {
-
     const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
     // on place un pouce vert en face card_thumb et genre
@@ -2744,6 +2763,19 @@ notif_refillMarketSolo: async function(args) {
 
         // Attendre un petit instant pour être sûr que la colonne est bien vide
     await delay(500);
+
+    if (args.thumbs_removed.length > 0) {
+        const thumbRemovePromises = args.thumbs_removed.map((card, index) => {
+            return new Promise(resolve => {
+                setTimeout(async () => {
+                    await this.removeThumbOnCard(card);
+                    resolve();
+                }, index * 200); // 200ms de décalage entre chaque suppression
+            });
+        });
+
+        await Promise.all(thumbRemovePromises);
+    }
 
     //on supprime les cartes, item et pot sur la colonne 4
     await this.removeFourthColumn();
@@ -2765,8 +2797,8 @@ notif_refillMarketSolo: async function(args) {
     const cardPromises = Object.entries(args.cards_pick).map(([index, card]) => {
         return new Promise(resolve => {
             setTimeout(async () => {
-                await this.flipAndDrawCard(card);
-                //await this.drawCard(card);
+                //await this.flipAndDrawCard(card);
+                await this.drawCard(card);
                 resolve();
             }, index * 300); // Décalage de 300ms entre chaque carte
         });
@@ -2864,6 +2896,7 @@ notif_useThumbs: async function(args) {
 notif_showFinalScores: async function(args) {
 
     dojo.removeClass( 'final_scorepad_id', 'hidden');
+    dojo.addClass( 'market_id', 'hidden');
 
     Object.entries(args.final_scores).forEach(([playerId, scores]) => {
         const scoreMapping = {
