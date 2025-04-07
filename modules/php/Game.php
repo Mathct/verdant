@@ -493,8 +493,7 @@ class Game extends \Table
         $result["plant_cards"] = $this->_PLANT_CARDS;
         $result["room_cards"] = $this->_ROOM_CARDS;
 
-        // TODO: Gather all information about current game situation (visible by player $current_player_id).
-
+       
         return $result;
     }
 
@@ -760,7 +759,6 @@ class Game extends \Table
                         }
                     }
                     if (($test == $position + 10) && (in_array($conditions_room["north"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
                         if ($card_type <= 60) {
                             self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
                             $gain++;
@@ -779,7 +777,6 @@ class Game extends \Table
                         }
                     }
                     if (($test == $position - 10) && (in_array($conditions_room["south"], $conditions_plant))) {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
                         if ($card_type <= 60) {
                             self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$card_type}'");
                             $gain++;
