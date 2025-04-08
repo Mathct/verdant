@@ -65,6 +65,7 @@ class Game extends \Table
             "room_goal" => 11,
             "item_goal" => 12,
             "last_turn" => 13,
+            "end_game" => 14,
         ]);
 
         self::$instance = $this; // ATTENTION
@@ -151,6 +152,7 @@ class Game extends \Table
         self::initStat('player', 'watering_can_used', 0);
 
         $this->setGameStateInitialValue('last_turn', 0);
+        $this->setGameStateInitialValue('end_game', 0);
 
 
         $nbreplayers = count($players);
@@ -493,7 +495,27 @@ class Game extends \Table
         $result["plant_cards"] = $this->_PLANT_CARDS;
         $result["room_cards"] = $this->_ROOM_CARDS;
 
-       
+
+        $result["end_game"] = game::$instance->getGameStateValue('end_game');
+
+        if (game::$instance->getGameStateValue('end_game') == 1) {
+            $player_ids = self::getObjectListFromDB("SELECT player_id id FROM player", true);
+            foreach ($player_ids as $player_id) {
+                $result["scoring"][$player_id]['completed_plants'] = $this->getStat('completed_plants', $player_id);
+                $result["scoring"][$player_id]['extra_verdancy'] = $this->getStat('extra_verdancy', $player_id);
+                $result["scoring"][$player_id]['pot_bonus'] = $this->getStat('pot_bonus', $player_id);
+                $result["scoring"][$player_id]['room_bonus'] = $this->getStat('room_bonus', $player_id);
+                $result["scoring"][$player_id]['furniture_pets'] = $this->getStat('furniture_pets_number', $player_id);
+                $result["scoring"][$player_id]['plant_collector_bonus'] = $this->getStat('plant_collector_bonus', $player_id);
+                $result["scoring"][$player_id]['room_collector_bonus'] = $this->getStat('room_collector_bonus', $player_id);
+                $result["scoring"][$player_id]['plant_goal'] = $this->getStat('plant_goal', $player_id);
+                $result["scoring"][$player_id]['item_goal'] = $this->getStat('item_goal', $player_id);
+                $result["scoring"][$player_id]['room_goal'] = $this->getStat('room_goal', $player_id);
+                $result["scoring"][$player_id]['total'] = self::getUniqueValuefromDB("SELECT player_score FROM player WHERE player_id = '{$player_id}'");
+            }
+        }
+
+
         return $result;
     }
 
@@ -1284,13 +1306,13 @@ class Game extends \Table
             $plant_infos = $this->_PLANT_CARDS[$plant['type']];
 
 
-            if ($plant['type_arg'] == -1) {
+            //if ($plant['type_arg'] == -1) {
                 foreach ($pots as $pot) {
                     if ($pot['location_arg'] == $plant['type']) {
                         $final_scores[$player_id]['completed_plants'] += $plant_infos['points'];
                     }
                 }
-            }
+            //}
 
             if ($plant['type_arg'] == -2) {
 
@@ -1401,7 +1423,7 @@ class Game extends \Table
             $type_plants = array();
             $list_plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location='{$player}'", true);
             foreach ($list_plants as $plant) {
-                $type_plant[] = $this->_PLANT_CARDS[$plant]['type'];
+                $type_plants[] = $this->_PLANT_CARDS[$plant]['type'];
             }
 
             $TypeUnique = array_unique($type_plants);
@@ -2985,7 +3007,7 @@ class Game extends \Table
                         self::DbQuery("UPDATE pot set card_location = {$player_id} WHERE card_id = '{$pot_id}'");
                         self::DbQuery("UPDATE pot set card_location_arg = $plant_type WHERE card_id = '{$pot_id}'");
 
-                        self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$plant_type}'");
+                        self::DbQuery("UPDATE plant set card_type_arg = -1 WHERE card_type = '{$plant_type}'");
                     } else {
                         $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
 
@@ -3201,7 +3223,7 @@ class Game extends \Table
                         self::DbQuery("UPDATE pot set card_location = {$player_id} WHERE card_id = '{$pot_id}'");
                         self::DbQuery("UPDATE pot set card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
 
-                        self::DbQuery("UPDATE plant set card_type_arg = 0 WHERE card_type = '{$explode[1]}'");
+                        self::DbQuery("UPDATE plant set card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
                     } else {
                         $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
                         $delta = $max_verdoiement - $before_verdoiement;

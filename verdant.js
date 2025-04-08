@@ -274,7 +274,7 @@ onUpdateActionButtons: function( stateName, args ) {
                         this.addActionButton( 'cancel', _("Cancel") ,'onOpButton', null, null, 'red' );
                     }
                     if(args.buttons[nb] == "pass") {
-                        this.addActionButton( 'pass', _("Pass") ,'onOpButton', null, null, 'red' );
+                        this.addActionButton( 'pass', _("End Turn") ,'onOpButton', null, null, 'red' );
                     }
                     if(args.buttons[nb] == "reset") {
                         this.addActionButton( 'reset', _("Reset selections") ,'onOpResetSelection', null, null, 'red' );
@@ -801,6 +801,12 @@ setupBoard: function () {
     this.addScorepad();
     this.addMarket();
 
+    console.log( 'end_game', this.gamedatas.end_game)
+    if( this.gamedatas.end_game == "1") {
+        (console.log('test OK'))
+        this.showFinalScores(this.gamedatas.scoring);
+    }
+
     this.addDecksToMarket();
     this.addPotsToMarket();
 
@@ -903,6 +909,7 @@ addScorepad: function() {
             // Ajouter la cellule dans le tableau de scores
             scorepad.appendChild(cell);
         }
+
     }
 
     // Ajouter le tableau de scores dans le DOM
@@ -922,7 +929,7 @@ addScorepad: function() {
         container.appendChild(newImage);
         this.addTooltipHtml('scorepad_avatar_'+playerId, this.gamedatas.players[playerId].name, '' );
     }
- 
+
 
 },
 
@@ -1944,7 +1951,34 @@ addNewPot: async function(pot) {
 
 
 
+showFinalScores: function(final_scores) {
+    dojo.removeClass( 'final_scorepad_id', 'hidden');
+    dojo.addClass( 'market_id', 'hidden'); 
 
+    Object.entries(final_scores).forEach(([playerId, scores]) => {
+        const scoreMapping = {
+            2: "completed_plants",
+            3: "extra_verdancy",
+            4: "pot_bonus",
+            5: "room_bonus",
+            6: "furniture_pets",
+            7: "plant_collector_bonus",
+            8: "room_collector_bonus",
+            9: "plant_goal",
+            10: "item_goal",
+            11: "room_goal",
+            12: "total"
+        };
+
+        Object.entries(scoreMapping).forEach(([row, scoreType]) => {
+            const cell = document.getElementById(`score_line_${row}_player_${playerId}`);
+            if (cell) {
+                cell.innerText = scores[scoreType] ?? ""; // Laisser vide si la valeur est undefined
+            }
+        });
+    });
+
+},
 
 
 
@@ -2536,18 +2570,19 @@ notif_moveCardToHouse: async function(args) {
     if( player_id == this.player_id ) {
 
         // market card is removed
-        if( args.card_before.location_arg != 99) {
+/*        if( args.card_before.location_arg != 99) {
             const element = document.getElementById(market_location);
             this.destroy(element);
             //element.remove();
-        }
+        }*/
 
         const possibleElements = document.querySelectorAll('.possible_in_house');
         possibleElements.forEach(element => {
             const parts = element.id.split('_');
             const location = parts[1];
+            element.parentNode?.remove();
 
-            if (location === house_location) {
+        /*    if (location === house_location) {
                 
                 element.classList.remove( 'possible_in_house', 'selectable');
 
@@ -2563,11 +2598,11 @@ notif_moveCardToHouse: async function(args) {
             } else {
                 // Supprimer le parent de cet élément
                 element.parentNode?.remove();
-            }
+            }*/
         });
     }
 
-    else {
+    //else {
         if( args.card_before.location_arg != 99) {
             
             // dynamic container is added
@@ -2590,7 +2625,7 @@ notif_moveCardToHouse: async function(args) {
         else {
             this.addCardToHouse(args.card_after, args.card_before.genre);
         }
-    }
+    //}
 },
 
 
@@ -2895,33 +2930,10 @@ notif_useThumbs: async function(args) {
 
 notif_showFinalScores: async function(args) {
 
-    dojo.removeClass( 'final_scorepad_id', 'hidden');
-    dojo.addClass( 'market_id', 'hidden');
-
-    Object.entries(args.final_scores).forEach(([playerId, scores]) => {
-        const scoreMapping = {
-            2: "completed_plants",
-            3: "extra_verdancy",
-            4: "pot_bonus",
-            5: "room_bonus",
-            6: "furniture_pets",
-            7: "plant_collector_bonus",
-            8: "room_collector_bonus",
-            9: "plant_goal",
-            10: "item_goal",
-            11: "room_goal",
-            12: "total"
-        };
-
-        Object.entries(scoreMapping).forEach(([row, scoreType]) => {
-            const cell = document.getElementById(`score_line_${row}_player_${playerId}`);
-            if (cell) {
-                cell.innerText = scores[scoreType] ?? ""; // Laisser vide si la valeur est undefined
-            }
-        });
-    });
-   
+    this.showFinalScores(args.final_scores); 
 },
+
+
 
 notif_score: async function( args ){
     

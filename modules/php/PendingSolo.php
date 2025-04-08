@@ -381,7 +381,12 @@ class PendingSolo extends APP_GameClass
 
 
 
-            $ret['buttons'][] = 'store';
+            if($tile_market_type != null) {
+                $ret['buttons'][] = 'store';
+            }
+            else {
+                $ret['buttons'][] = 'pass';
+            }
         }
 
 
@@ -393,7 +398,7 @@ class PendingSolo extends APP_GameClass
     {
         if ($varg1 == 'thumb') {
             game::$instance->addPending($this->player_id, "UseThumb", 2, "NormalTurnStep3_" . $parg1);
-        } elseif ($varg1 == 'store') {
+        } elseif (($varg1 == 'store')||($varg1 == 'pass')) {
 
             game::$instance->addPending($this->player_id, "ChooseReserve", $parg1);
         } elseif ($varg1 == null) {
@@ -2213,6 +2218,7 @@ class PendingSolo extends APP_GameClass
 
     function EndOfGame($parg1, $parg2, $varg1, $varg2)
     {
+        game::$instance->setGameStateValue('end_game', 1);
         game::$instance->gamestate->nextState('end');
     }
 }
