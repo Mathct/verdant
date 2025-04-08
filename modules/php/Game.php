@@ -58,6 +58,9 @@ class Game extends \Table
 
         require 'material.inc.php';
 
+        // EXPERIMENTAL to avoid deadlocks.  This locks the global table early in the game constructor.
+        $this->bSelectGlobalsForUpdate = true;
+
         $this->initGameStateLabels([
 
             "game_mode" => 100,
