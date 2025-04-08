@@ -26,7 +26,7 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
       return this.instantaneousMode;
     },
 
-    setModeInstantaneous() {
+ /*   setModeInstantaneous() {
       if (this.instantaneousMode == false) {
         this.instantaneousMode = true;
         dojo.style('leftright_page_wrapper', 'display', 'none');
@@ -42,6 +42,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
         dojo.style('loader_mask', 'display', 'none');
         this.updateLayout();
       }
+    },*/
+
+    unsetModeInstantaneous() {
+      this.inherited(arguments);
+      this.updateLayout();
     },
 
     /*

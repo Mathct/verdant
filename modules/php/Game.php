@@ -1472,7 +1472,7 @@ class Game extends \Table
 
         /// MODE AVANCE ////
 
-        if ($this->getGameStateValue('game_mode') == 2) {
+        if (($this->getGameStateValue('game_mode') == 2)||($this->getGameStateValue('game_mode') == 3)) {
 
             foreach ($players as $player) {
                 $final_scores[$player]['plant_goal'] = 0;

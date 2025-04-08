@@ -32,6 +32,7 @@
     --grid-gap: 10px;
     --house-padding: 10px;
     --tile-width: 50px;
+    --pot-width: 60px;
     --minipot-width: 32px;
     --lightning-width: 24px;
 }
@@ -583,14 +584,21 @@ font-family: "MyriadPro";
 .icon {
   width: var(--tile-width);
   height: var(--tile-width);
-  background-image: url("img/VE_Icons.png");
+  background-image: url("img/VE_Icons_2.png");
+  background-size: 600% 200%;
+}
+
+.pot {
+  width: var(--pot-width);
+  height: var(--pot-width);
+  background-image: url("img/VE_Icons_2.png");
   background-size: 600% 200%;
 }
 
 .minipot {
   width: var(--minipot-width);
   height: var(--minipot-width);
-  background-image: url("img/VE_Icons.png");
+  background-image: url("img/VE_Icons_2.png");
   background-size: 600% 200%;
   position: relative;
 }
@@ -614,7 +622,7 @@ font-family: "MyriadPro";
 .big-icon { /* bag */
   width: calc(var(--tile-width) * 2);
   height: calc(var(--tile-width) * 2);
-  background-image: url("img/VE_Icons.png");
+  background-image: url("img/VE_Icons_2.png");
   background-size: 600% 200%;
 }
 
@@ -626,8 +634,8 @@ font-family: "MyriadPro";
 
 .house-pot {
   position: absolute;
-  top: 60%;
-  left: 31%;
+  top: 57%;
+  left: 27%;
 }
 
 .tile-house {

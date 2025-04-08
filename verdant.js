@@ -47,8 +47,6 @@ function (dojo, declare) {
     return declare("bgagame.verdant", [customgame.game], {
         constructor: function() {
             console.log('verdant constructor');
-              
-
         },
 
             
@@ -70,10 +68,6 @@ setup: function( gamedatas )
     // arrays from gamedatas
 
     this.players = gamedatas.players; // A RAJOUTER POUR MOTEUR (UTILITY METHODS)
-
-
-
-
     this.players_ordered = gamedatas.players_ordered;
 
 
@@ -734,7 +728,7 @@ setupPlayersBoard: function() {
         `;
         aiBoard.insertAdjacentHTML("beforeend", reserveGroup);
 
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Player\'s reserve')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Player\'s reserve')+"</span></div>";
         this.addCustomTooltip( `icon_reserve_${player.id}`, html);
 
 
@@ -753,7 +747,7 @@ setupPlayersBoard: function() {
         const color = Math.floor(Math.random() * 5); // Génère un nombre entre 0 et 4
         thumbElement.style.backgroundPosition = `-${color}00% -100%`;
 
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Thumbs collected')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Thumbs collected')+"</span></div>";
         this.addCustomTooltip( `icon_thumb_${player.id}`, html);
 
         if( player.id ==this.player_id) {
@@ -798,12 +792,21 @@ setupBoard: function () {
     // on ajoute le marché et chaque maison
     // on remplit avec les pièces, les plantes, les tuiles et les pots
 
+    const gameBoard = `
+        <div id="resized_id">
+            <div id="board_id"></div>
+        </div>   
+    `
+    
+    const gamePlayArea = document.getElementById("game_play_area");
+    gamePlayArea.insertAdjacentHTML("beforeend", gameBoard);
+
+
+
     this.addScorepad();
     this.addMarket();
 
-    console.log( 'end_game', this.gamedatas.end_game)
     if( this.gamedatas.end_game == "1") {
-        (console.log('test OK'))
         this.showFinalScores(this.gamedatas.scoring);
     }
 
@@ -851,21 +854,17 @@ setupBoard: function () {
     });
 
 
-    Object.values(this.gamedatas.pots).forEach((pot) => {
-        if(pot.location == 'market') {
-            // SOLO MODE
-            //this.addPotToMarket(pot)
-        }
-        else if(pot.location != 'deck' && pot.location != 'discard') {
-            this.addPotToHouse(pot);
-        }
+    Object.values(this.gamedatas.pots).forEach(pot => {
+        if (['deck', 'discard', 'market'].includes(pot.location)) 
+            return;
+
+        this.addPotToHouse(pot);
     });
 },
 
 
 addScorepad: function() {
 
-    // const playerCount = Object.keys(this.players).length;
     const rowCount = 12; // 12 lignes
 
     // Créer le tableau de scores
@@ -1031,7 +1030,7 @@ addPotsToMarket: function() {
             const potContainer = document.getElementById( `market_cell_1${col}`);
 
             potContainer.innerHTML = `
-                <div id="pot_market_${type}" class="icon" style="background-position: -${i}00% 0%;">
+                <div id="pot_market_${type}" class="pot" style="background-position: -${i}00% 0%;">
                     <span id="nb_pot_market_${type}" class="white-shadow-text">${nb_pot}</span>
                 </div>
             `;
@@ -1063,7 +1062,7 @@ addPotsToMarket: function() {
             const soloPotContainer = document.getElementById( `market_cell_1${pot_pos}`);
 
             soloPotContainer.innerHTML = ` 
-                <div id="pot_${pot.id}" class="icon" 
+                <div id="pot_${pot.id}" class="pot" 
                     style="background-position: -${pot_css}00% 0%;">
                 </div>
             `;
@@ -1164,7 +1163,7 @@ addGoalCards:function() {
     `;
 
     goalContainer.insertAdjacentHTML('beforeend', roomGoalHTML)
-
+ 
     this.addCustomTooltip(room_goal_id, this.getTooltipRoomGoalContent(room_goal_type, room_goal_id));
 },
 
@@ -1210,7 +1209,6 @@ addCardToMarket: function(card, genre) {
         this.thumb_counter[`${card_css}`] = new ebg.counter();
         this.thumb_counter[`${card_css}`].create(`nb_thumbs_${card_css}`);
         this.thumb_counter[`${card_css}`].toValue(nb_thumbs);
-        // TODO ATTENTION A VIRER DU TABLEAU QUAND ON DONNE LES POUCES
     }
 
 
@@ -1250,12 +1248,6 @@ addTileToMarket: function(tile) {
     this.addCustomTooltip(`tile_${tile.id}`, this.getTooltipTileContent(tile.type, tile.id));
 },
 
-
-
-addPotToMarket: function(pot) {
-    //console.log('house pot', pot);
-    // SOLO MODE
-},
 
 
 /*  _   _                       */
@@ -1414,7 +1406,7 @@ addPotToHouse: function(pot) {
     const pot_sprite = 3- pot.type;
 
     const housePotHTML = `
-        <div id="pot_${pot.id}" class="icon house-pot" 
+        <div id="pot_${pot.id}" class="pot house-pot" 
             style="background-position: -${pot_sprite}00% 0%; ">
         </div>
     `;
@@ -1605,11 +1597,7 @@ drawTile: async function(tile) { // checked
 
 addThumbOnCard: function(card, value = 1) {
 
-    //const genre = old_genre == 'room' ? 'plant' : 'room';
-
     const genre = card.genre;
-
-    console.log( 'thumb_counter before', this.thumb_counter);
 
     if( card.thumb > 0) {
         this.thumb_counter[`${genre}_${card.type}`].incValue(value);
@@ -1630,12 +1618,8 @@ addThumbOnCard: function(card, value = 1) {
         this.thumb_counter[`${genre}_${card.type}`] = new ebg.counter();
         this.thumb_counter[`${genre}_${card.type}`].create(`nb_thumbs_${genre}_${card.type}`);
         this.thumb_counter[`${genre}_${card.type}`].toValue(value);
-        // TODO ATTENTION A VIRER DU TABLEAU QUAND ON DONNE LES POUCES
-        console.log( 'thumb_counter created', `${genre}_${card.type}`);
-        console.log( 'thumb_counter value', this.thumb_counter[`${genre}_${card.type}`]);
-    }
-    console.log( 'thumb_counter after', this.thumb_counter);
 
+    }
 },
 
 
@@ -1683,7 +1667,7 @@ animatePotAppearance: function(plant_type, pot_value) { //checked
         const pot_sprite = 3 - pot_value;
 
         const housePotHTML = `
-            <div id="pot_house_plant_${plant_type}" class="icon house-pot sprite-appear"
+            <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear"
                 style="background-position: -${pot_sprite}00% 0%;">
             </div>
         `;
@@ -1709,7 +1693,7 @@ animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checke
         const pot_sprite = 3 - pot_value;
 
         const housePotHTML = `
-            <div id="pot_house_plant_${plant_type}" class="icon house-pot sprite-appear"
+            <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear"
                 style="background-position: -${pot_sprite}00% 0%;">
             </div>
         `;
@@ -1782,11 +1766,8 @@ moveBackThumbs: async function() {
         // La carte à l'intérieur de la cellule, par exemple, 'plant_16' ou 'room_32'
         const card = marketCell.firstElementChild;
         if( card) {
-            console.log( 'card', card);
+
             const thumbId = `thumbs_${card.id}`;
-            console.log( 'thumbId', thumbId);
-            console.log( 'thumb_counter', this.thumb_counter);
-            console.log( 'thumb_counter thumbId', this.thumb_counter[card.id]);
     
             // Vérifier si le compteur existe pour cette carte
             if (this.thumb_counter[card.id]) {
@@ -1800,22 +1781,15 @@ moveBackThumbs: async function() {
                     // Chercher la première cellule disponible pour y déplacer les pouces
                     for (let i = 4; i >= 2; i--) {
                         const targetCell = document.getElementById(`${prefix === "plant" ? "market_cell_2" : "market_cell_4"}${i}`);
-                        console.log( 'targetCell', targetCell.id);
+
                         if (targetCell) {
                             const targetCard = targetCell.firstElementChild;
-                            console.log( 'targetCard', targetCard);
-                            if (targetCard) {
-                                console.log( 'targetCardId', targetCard.id);
-                                const targetThumbId = `thumbs_${targetCard.id}`;
 
+                            if (targetCard) {
                                 // Vérifier si cette carte cible a déjà des pouces
                                 if (this.thumb_counter[targetCard.id]) {
                                     this.thumb_counter[targetCard.id].incValue(nbThumbs);
 
-                                    // Si la carte a 3 pouces ou plus, les supprimer
-                                /*    if (this.thumb_counter[targetCard.id].getValue() >= 3) {
-                                        await this.animateAndRemoveToken(targetThumbId);
-                                    }*/
                                 } else {
                                     // Ajouter les pouces à la carte cible s'il n'y en a pas encore
                                     const cardIdSuffix = targetCard.id.split('_')[1]; // Ex: '21' pour 'plant_21'
@@ -1830,13 +1804,9 @@ moveBackThumbs: async function() {
 
                     // Une fois déplacés, supprimer le compteur de pouces de la carte d'origine
                     delete this.thumb_counter[card.id];
-                    console.log( 'thumb supprimé ', card.id);
                 }
             }
         }
-
-        
-        
     };
 
     // Traiter les pouces pour les cartes plant et room
@@ -1848,7 +1818,6 @@ moveBackThumbs: async function() {
 
 removeThumbOnCard: async function (card) {
 
-    console.log('thumb_counter',this.thumb_counter);
     const targetThumbId = `thumbs_${card.genre}_${card.type}`;
     await this.animateAndRemoveToken(targetThumbId);
     delete this.thumb_counter[`${card.genre}_${card.type}`];
@@ -1894,27 +1863,7 @@ moveAllRight: async function() {
                     const nextCell = document.getElementById(nextCellId);
 
                     if (nextCell) {
-                        // Déplacer la carte avec un léger décalage entre chaque animation
-                        const movePromise = this.slide(card, nextCell).then(() => {
-                            // Gestion des pouces après l'animation
-                        /*    const thumbId = `thumbs_${card.id}`;
-                            if (document.getElementById(thumbId)) {
-                                const nbThumbs = this.thumb_counter[card.id]?.getValue() || 0;
-                                if (nbThumbs > 0) {
-                                    const nextCard = nextCell.firstElementChild;
-                                    if (nextCard) {
-                                        if (!this.thumb_counter[nextCard.id]) {
-                                            this.thumb_counter[nextCard.id] = new ebg.counter();
-                                            this.thumb_counter[nextCard.id].create(`nb_thumbs_${nextCard.id}`);
-                                            this.thumb_counter[nextCard.id].toValue(nbThumbs);
-                                        }
-                                        
-                                        delete this.thumb_counter[card.id];
-                                    }
-                                }
-                            }*/
-                        });
-                        movePromises.push(movePromise);
+                        movePromises.push(this.slide(card, nextCell));
                     }
                 }
             }
@@ -1932,7 +1881,7 @@ addNewPot: async function(pot) {
     const pot_sprite = 3- pot.type;
 
     const marketPotHTML = `
-        <div id="pot_${pot.id}" class="icon" 
+        <div id="pot_${pot.id}" class="pot" 
             style="background-position: -${pot_sprite}00% 0%; ">
         </div>
     `;
@@ -2018,7 +1967,7 @@ setupCounters: function() {
             this.pot_deck_counter[i].toValue(nb_pot);
 
             const nb_pot_discard = this.gamedatas.nb_pots_in_discard[i+1] || 0;
-           this.pot_discard_counter[i+1] = new ebg.counter();
+            this.pot_discard_counter[i+1] = new ebg.counter();
             this.pot_discard_counter[i+1].create(`nb_pot_discard_${i+1}`);
             this.pot_discard_counter[i+1].toValue(nb_pot_discard);
         }
@@ -2064,28 +2013,28 @@ showHelpModal: function() {
           html += "<div class='tooltip_bigtitle'>"+_('Turn Summary')+"</div>";
 
           html += "<div class='tooltip_subtitle'>"+_('Select a Card and a Token')+"</div>";
-          html += "<div class='tooltip_description'>"+_('You must select 1 Item Token and 1 Card (Plant or Room) from the same column.')+"</div>";
+          html += "<div class='tooltip_desc'>"+_('You must select 1 Item Token and 1 Card (Plant or Room) from the same column.')+"</div>";
 
           html += "<br><div class='tooltip_subtitle'>"+_('Place the Card into your home')+"</div>";
-          html += "<div class='tooltip_description'>"+_('You will be creating a 5x3 grid of cards in your personal play area, your Home!')+"</div>";
-          html += "<div class='tooltip_description'>"+_('Cards must be placed orthogonally adjacent to other cards. Plant Cards must be placed next to Room Cards, and vice versa, in a checkerboard pattern.')+"</div>";
+          html += "<div class='tooltip_desc'>"+_('You will be creating a 5x3 grid of cards in your personal play area, your Home!')+"</div>";
+          html += "<div class='tooltip_desc'>"+_('Cards must be placed orthogonally adjacent to other cards. Plant Cards must be placed next to Room Cards, and vice versa, in a checkerboard pattern.')+"</div>";
 
           html += "<br><div class='tooltip_subtitle'>"+_('Check lighting Conditions and collect Verdancy')+"</div>";
-          html += "<div class='tooltip_description'>"+_('If a match between the Lighting condition on a Room any any of the preferred ones ont the Plant Card is made when placing a Card, then 1 Verdancy is added to the Plant Card.')+"</div>";
+          html += "<div class='tooltip_desc'>"+_('If a match between the Lighting condition on a Room any any of the preferred ones ont the Plant Card is made when placing a Card, then 1 Verdancy is added to the Plant Card.')+"</div>";
 
           html += "<br><div class='tooltip_subtitle'>"+_('Place/Use Items')+"</div>";
-          html += "<div class='tooltip_description'>"+_('You may place a Pet/Furniture on any Room with a bonus scoring if their type matches.')+"</div>";
-           html += "<div class='tooltip_description'>"+_('You may use a Nurture Item Token to add Verdancy on one or several Plants.')+"</div>";
+          html += "<div class='tooltip_desc'>"+_('You may place a Pet/Furniture on any Room with a bonus scoring if their type matches.')+"</div>";
+           html += "<div class='tooltip_desc'>"+_('You may use a Nurture Item Token to add Verdancy on one or several Plants.')+"</div>";
          
           html += "<br><div class='tooltip_subtitle'>"+_('Completing Plants and adding Pots')+"</div>";
-           html += "<div class='tooltip_description'>"+_('Whenever you complete a plant by adding enough Verdancy, the Plant is potted with the highest value Bonus Pot Token.')+"</div>";
+           html += "<div class='tooltip_desc'>"+_('Whenever you complete a plant by adding enough Verdancy, the Plant is potted with the highest value Bonus Pot Token.')+"</div>";
 
             html += "<br><div class='tooltip_subtitle'>"+_('Store any unused Item Token and check Green Thumb Token limit')+"</div>";
-           html += "<div class='tooltip_description'>"+_('You may store one single Item Token in your Storage location. The others remaining are discarded!')+"</div>";
-           html += "<div class='tooltip_description'>"+_('You may hold a maximum of 5 Green Thumb Tokens from one turn to the next. The excess is discarded back to the supply.')+"</div>";
+           html += "<div class='tooltip_desc'>"+_('You may store one single Item Token in your Storage location. The others remaining are discarded!')+"</div>";
+           html += "<div class='tooltip_desc'>"+_('You may hold a maximum of 5 Green Thumb Tokens from one turn to the next. The excess is discarded back to the supply.')+"</div>";
 
             html += "<br><div class='tooltip_subtitle'>"+_('Refill the Market')+"</div>";
-           html += "<div class='tooltip_description'>"+_('A Card and a Token are added from the appropriate deck and bag to the Market and your turn is over.')+"</div>";
+           html += "<div class='tooltip_desc'>"+_('A Card and a Token are added from the appropriate deck and bag to the Market and your turn is over.')+"</div>";
 
 
           html += '</div>'
@@ -2130,58 +2079,113 @@ showHelpModal: function() {
 setupTooltips:function () {
 
     // Plants deck
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Plants deck')+"</span></div>";
+    html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Plants deck')+"</span></div>";
     this.addCustomTooltip( `plant_market_deck`, html);
 
     // Rooms Deck
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Rooms deck')+"</span></div>";
+    html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Rooms deck')+"</span></div>";
     this.addCustomTooltip( `room_market_deck`, html);
 
     // Tiles Bag
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Bag of Tiles')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Bag of Tiles')+"</span></div>";
     this.addCustomTooltip( `bag_market`, html);
 
     const playerCount = Object.keys(this.players).length;
     if( playerCount == 1 ) {
 
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Concrete pots discarded')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Concrete pots discarded')+"</span></div>";
         this.addCustomTooltip( `pot_discard_3`, html);
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Wood pots discarded')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Wood pots discarded')+"</span></div>";
         this.addCustomTooltip( `pot_discard_2`, html);
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Ceramic pots discarded')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Ceramic pots discarded')+"</span></div>";
         this.addCustomTooltip( `pot_discard_1`, html);
 
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Wood pots remaining')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Wood pots remaining')+"</span></div>";
         this.addCustomTooltip( `pot_deck_2`, html);
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Ceramic pots remaining')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Ceramic pots remaining')+"</span></div>";
         this.addCustomTooltip( `pot_deck_1`, html);
-        html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Terra Cotta pots remaining')+"</span></div>";
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Terra Cotta pots remaining')+"</span></div>";
         this.addCustomTooltip( `pot_deck_0`, html);
     }
 
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Players')+"</span></div>";
+    html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Players')+"</span></div>";
     this.addCustomTooltip( `score_line_1`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Completed Plants')+"</span></div>";
-    this.addCustomTooltip( `score_line_2`, html);   
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Extra Verdancy on Incomplete Plants')+"</span></div>";
+
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Completed Plants')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('Points indicated below Verdancy requirement for each completed Plant Card.')+"</span></div>";
+     this.addCustomTooltip( `score_line_2`, html);    
+   
+    
+  
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Extra Verdancy on Incomplete Plants')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('Each player scores half of the total number of Verdancy on incomplete plants.')+"</span></div>";
     this.addCustomTooltip( `score_line_3`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Bonus Pot Tokens')+"</span></div>";
+
+
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Bonus Pot Tokens')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('Concrete pots score 3 points, Wood pots score 2 points and Ceramic pots score 1 point.')+"</span></div>";
     this.addCustomTooltip( `score_line_4`, html); 
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Room Bonuses')+"</span></div>";
+
+
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Room Bonuses')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('1 Point scored per adjacent matching plant. Matching Pet/Furniture doubles the points.')+"</span></div>";
     this.addCustomTooltip( `score_line_5`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Furniture and Pets')+"</span></div>";
+
+
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Furniture and Pets')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('1,3,6,9,12,16,20,25 points scored for unique Pet/Furniture tokens in their home.')+"</span></div>";
     this.addCustomTooltip( `score_line_6`, html);   
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Plant Collector Bonus')+"</span></div>";
+
+
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Plant Collector Bonus')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('3 points if home contains at 1 of the 5 different plant types.')+"</span></div>";
     this.addCustomTooltip( `score_line_7`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Decorator Bonus')+"</span></div>";
+
+
+    html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Decorator Bonus')+"</span>";
+    html += "<span class='tooltip_desc'>"+_('3 points if home contains at 1 of the 5 different room types.')+"</span></div>";
     this.addCustomTooltip( `score_line_8`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Plant Goal Bonus')+"</span></div>";
-    this.addCustomTooltip( `score_line_9`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Item Goal Bonus')+"</span></div>";
-    this.addCustomTooltip( `score_line_10`, html);   
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Room Goal Bonus')+"</span></div>";
-    this.addCustomTooltip( `score_line_11`, html);
-    html = "<div class='tooltip_content'><span class='tooltip_description'>"+_('Total Scores')+"</span></div>";
+
+
+    if( this.gamedatas.game_mode >= ADVANCED ) {
+        const plant_goal_type = this.gamedatas.plant_goal; // vert clair
+        const plant_goal_id = `plant_goal_${plant_goal_type}`;
+
+        this.addCustomTooltip(`score_line_9`, this.getTooltipPlantGoalContent(plant_goal_type, plant_goal_id));
+    } 
+    else {
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Plant Goal Bonus')+"</span></div>";
+        this.addCustomTooltip( `score_line_9`, html);
+    }   
+    
+    if( this.gamedatas.game_mode >= ADVANCED ) {
+        const item_goal_type = this.gamedatas.item_goal; // vert moyen
+        const item_goal_id = `item_goal_${item_goal_type}`;
+
+        this.addCustomTooltip(`score_line_10`, this.getTooltipItemGoalContent(item_goal_type, item_goal_id));
+    }
+    else {
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Item Goal Bonus')+"</span></div>";
+        this.addCustomTooltip( `score_line_10`, html); 
+    }
+  
+
+
+    if( this.gamedatas.game_mode >= ADVANCED ) {
+        const room_goal_type = this.gamedatas.room_goal; // vert foncé
+        const room_goal_id = `room_goal_${room_goal_type}`;
+ 
+        this.addCustomTooltip(`score_line_11`, this.getTooltipRoomGoalContent(room_goal_type, room_goal_id));
+
+    }
+    else {
+        html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Room Goal Bonus')+"</span></div>";
+        this.addCustomTooltip( `score_line_11`, html);
+    }
+    
+
+
+    html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Total Scores')+"</span></div>";
     this.addCustomTooltip( `score_line_12`, html);
 
 },
@@ -2506,22 +2510,6 @@ onScreenWidthChange: function () {
 },
 
 updateLayout: function () {
-/*        
-    var gameWidth = TABLE_WIDTH;
-    var gameHeight = TABLE_HEIGHT;
-
-    var horizontalScale = document.getElementById('game_play_area').clientWidth / gameWidth;
-    var verticalScale = (window.innerHeight - 0) / gameHeight;
-
-    var scale = Math.min(1, horizontalScale, verticalScale);
-
-    var resized_div = document.getElementById('resized_id');
-    var play_area_height = dojo.marginBox("board_id").h;
-
-    resized_div.style.transform = scale === 1 ? '' : "scale(".concat(scale, ")");
-
-    dojo.style("resized_id",'height', (play_area_height*scale)+'px');      
-*/
 },
 
 ///////////////////////////////////////////////////////////////////////////////// 
@@ -2569,63 +2557,34 @@ notif_moveCardToHouse: async function(args) {
 
     if( player_id == this.player_id ) {
 
-        // market card is removed
-/*        if( args.card_before.location_arg != 99) {
-            const element = document.getElementById(market_location);
-            this.destroy(element);
-            //element.remove();
-        }*/
 
         const possibleElements = document.querySelectorAll('.possible_in_house');
         possibleElements.forEach(element => {
-            const parts = element.id.split('_');
-            const location = parts[1];
             element.parentNode?.remove();
-
-        /*    if (location === house_location) {
-                
-                element.classList.remove( 'possible_in_house', 'selectable');
-
-                this.destroyTooltip(element);
-                
-                element.id = market_location;
-                if( args.card_before.genre == 'plant') {
-                    this.addCustomTooltip(element.id, this.getTooltipPlantContent(args.card_before.type, element.id));
-                }
-                else {
-                    this.addCustomTooltip(element.id, this.getTooltipRoomContent(args.card_before.type, element.id));
-                }
-            } else {
-                // Supprimer le parent de cet élément
-                element.parentNode?.remove();
-            }*/
         });
     }
 
-    //else {
-        if( args.card_before.location_arg != 99) {
-            
-            // dynamic container is added
-            const slotHTML = `
-                <div id="slot_${house_location}_${player_id}" class="grid-slot" 
-                    style="grid-column-start: ${col}; grid-row-start: ${row};">
-                </div>
-            `;
 
-            const houseGrid = document.getElementById(`house_grid_${player_id}`);
-            houseGrid.insertAdjacentHTML("beforeend", slotHTML);
+    if( args.card_before.location_arg != 99) {
+        
+        // dynamic container is added
+        const slotHTML = `
+            <div id="slot_${house_location}_${player_id}" class="grid-slot" 
+                style="grid-column-start: ${col}; grid-row-start: ${row};">
+            </div>
+        `;
 
-            const slotContainer = document.getElementById(`slot_${house_location}_${player_id}`);
-           
-           // card is moved
-            await this.slide(market_location, slotContainer);
-        }
+        const houseGrid = document.getElementById(`house_grid_${player_id}`);
+        houseGrid.insertAdjacentHTML("beforeend", slotHTML);
 
-
-        else {
-            this.addCardToHouse(args.card_after, args.card_before.genre);
-        }
-    //}
+        const slotContainer = document.getElementById(`slot_${house_location}_${player_id}`);
+        
+        // card is moved
+        await this.slide(market_location, slotContainer);
+    }
+    else {
+        this.addCardToHouse(args.card_after, args.card_before.genre);
+    }
 },
 
 
@@ -2852,7 +2811,7 @@ notif_refillMarketSolo: async function(args) {
 
     // Attendre que toutes les animations soient terminées
     await Promise.all([potPromise, ...cardPromises, ...tilePromises]);
-    console.log('thumbs after refill solo',this.thumb_counter);
+
     
 },
 
