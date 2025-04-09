@@ -84,6 +84,12 @@ setup: function( gamedatas )
     this.verdancy_counter = [];
     this.plant_deck_counter = gamedatas.plants_deck;
     this.room_deck_counter = gamedatas.rooms_deck;
+
+    this.timer = 5;
+    let timerPreference = this.getGameUserPreference(101);
+    if (timerPreference !== null && timerPreference !== undefined) {
+        this.timer = timerPreference;
+    }
  
 
     this.setupPlayersBoard();
@@ -278,7 +284,7 @@ onUpdateActionButtons: function( stateName, args ) {
                     }
                     if(args.buttons[nb] == "yes") {
                         this.addActionButton( 'yes', _("Yes") ,'onOpButton', null, null, 'blue' );
-                        this.startActionTimer('yes', 5, 1);
+                        this.startActionTimer('yes', this.timer, 1);
                     }
                     if(args.buttons[nb] == "no") {
                         this.addActionButton( 'no', _("No") ,'onOpButton', null, null, 'red' );
@@ -697,6 +703,14 @@ onOpResetSelection: function(evt) {
     dojo.addClass('validate_mixed', 'disabled');
     dojo.addClass('validate_verdancy', 'disabled');
 
+},
+
+onGameUserPreferenceChanged: function(pref_id, pref_value) {
+    switch (pref_id) {
+        case 101: 
+        this.timer = pref_value;
+        break;
+    }
 },
 
 
