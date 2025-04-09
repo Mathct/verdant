@@ -45,6 +45,7 @@ class PendingSolo extends APP_GameClass
             if ($thumb >= 2) {
                 $ret['titleyou'] = clienttranslate('${you} must choose a market card or use');
                 $ret['buttons'][] = 'thumb';
+                $ret["selectable"][] = 'icon_thumb_'.$this->player_id;
             } else {
                 $ret['titleyou'] = clienttranslate('${you} must choose a market card');
             }
@@ -79,7 +80,7 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == null) {
             game::$instance->getFinalResults();
             game::$instance->addPending($this->player_id, "EndOfGame");
-        } elseif ($varg1 == 'thumb') {
+        } elseif (($varg1 == 'thumb')||($varg1 == 'icon_thumb_'.$this->player_id)) {
             game::$instance->addPending($this->player_id, "UseThumb", 1);
         } else {
             game::$instance->addPending($this->player_id, "NormalTurnStep2", $varg1);
@@ -377,6 +378,7 @@ class PendingSolo extends APP_GameClass
 
             if ((!empty($plants_without_pots)) && ($thumb >= 2)) {
                 $ret['buttons'][] = 'thumb';
+                $ret["selectable"][] = 'icon_thumb_'.$this->player_id;
             }
 
 
@@ -396,7 +398,7 @@ class PendingSolo extends APP_GameClass
 
     function NormalTurnStep3($parg1, $parg2, $varg1, $varg2)
     {
-        if ($varg1 == 'thumb') {
+        if (($varg1 == 'thumb')||($varg1 == 'icon_thumb_'.$this->player_id)) {
             game::$instance->addPending($this->player_id, "UseThumb", 2, "NormalTurnStep3_" . $parg1);
         } elseif (($varg1 == 'store')||($varg1 == 'pass')) {
 
@@ -1523,6 +1525,7 @@ class PendingSolo extends APP_GameClass
         if ((!empty($plants_without_pots)) && ($thumb >= 2)) {
             $ret['titleyou'] = clienttranslate('${you} can use');
             $ret['buttons'][] = 'thumb';
+            $ret["selectable"][] = 'icon_thumb_'.$this->player_id;
             $ret['buttons'][] = 'pass';
         }
 
@@ -1533,7 +1536,7 @@ class PendingSolo extends APP_GameClass
 
     function FinalTurn($parg1, $parg2, $varg1, $varg2)
     {
-        if ($varg1 == "thumb") {
+        if (($varg1 == 'thumb')||($varg1 == 'icon_thumb_'.$this->player_id)) {
             game::$instance->addPending($this->player_id, "UseThumb", 2, "FinalTurn");
         } else {
             game::$instance->addPending($this->player_id, "RefillMarket");
@@ -1750,6 +1753,8 @@ class PendingSolo extends APP_GameClass
 
         $ret['title'] = clienttranslate('${actplayer} must choose a Thumb action');
 
+        $ret["selected"][] = 'icon_thumb_'.$this->player_id;
+
         $plants_market = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
         $rooms_market = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
         $tiles_market = self::getObjectListFromDB("SELECT card_id FROM tile WHERE card_location = 'market'", true);
@@ -1822,6 +1827,8 @@ class PendingSolo extends APP_GameClass
 
         if ($parg1 == 1) {
 
+            if($varg1 != 'cancel')
+            {
             $icon = '<span class="thumb_bt"></span>';
             game::$instance->notifyAllPlayers(
                 'message',
@@ -1831,6 +1838,7 @@ class PendingSolo extends APP_GameClass
                     'icon' => $icon,
                 )
             );
+            }
 
             game::$instance->addPending($this->player_id, "NormalTurn");
         }

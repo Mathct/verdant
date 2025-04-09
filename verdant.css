@@ -787,15 +787,41 @@ font-family: "MyriadPro";
 }
 
 
+/*  SVG */
+
+.selectable_thumb_pannel
+{
+  cursor: pointer;
+  pointer-events: auto !important;
+}
 
 
+.selectable_thumb_pannel svg, .selected_thumb_pannel svg { 
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible; 
+ 
+ }
 
+ .path_selectable { 
+  fill: none;
+  stroke: yellow;
+  stroke-width: 15; 
+  stroke-dasharray: 15, 15; 
+ 
+ }
 
-
-
-
-
-
+ .path_selected { 
+  fill: none;
+  stroke: yellow;
+  stroke-width: 15; 
+ 
+ }
+ 
+ 
 
 
 /* Tisaac Help Mode */

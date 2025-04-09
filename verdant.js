@@ -149,14 +149,30 @@ onEnteringState: function( stateName, args )
                         this.addPossibleCardPositions(sid,this.args.card[0]);
                     }
                     else {
-                        dojo.addClass(sid,"selectable");
+                        if (sid.startsWith("icon_thumb_")) {
+                            const element = document.getElementById(sid);
+                            this.addSVGs(element,"selectable");
+                            
+                        }
+                        else {
+                            dojo.addClass(sid,"selectable");
+                        }
+                        
                         this.possibles.push(sid);
                     }
                     
                 });
 
                 this.args.selected.forEach(sid => {
-                    dojo.addClass(sid,"selected");   
+
+                    if (sid.startsWith("icon_thumb_")) {
+                        const element = document.getElementById(sid);
+                        this.addSVGs(element,"selected");
+                            
+                        }
+                        else {
+                            dojo.addClass(sid,"selected");
+                        }  
                 });
 
                 if (this.args.selectablemulti) {
@@ -235,6 +251,8 @@ onLeavingState: function( stateName ) {
     dojo.query(".selectedmulti").removeClass("selectedmulti");
     dojo.query(".selectablethumb").removeClass("selectablethumb");
     dojo.query(".selectedthumb").removeClass("selectedthumb");
+    dojo.query(".selectable_thumb_pannel").removeClass("selectable_thumb_pannel");
+    this.removeSVGs();
 
     // Récupérer tous les éléments ayant la classe 'possible_in_house'
     const possibleElements = document.querySelectorAll('.possible_in_house');
@@ -387,6 +405,54 @@ format_string_recursive : function(log, args) {
 },
 
 
+removeSVGs: function() {
+    // Sélectionner tous les éléments <svg> dans le document
+    const svgs = document.querySelectorAll('svg');
+   
+    // Parcourir chaque <svg>
+    svgs.forEach(svg => {
+    // Vérifier si le <svg> contient un <path> avec la classe 'path_selectable' ou 'path_selected'
+    const path1 = svg.querySelector('path.path_selectable');
+    const path2 = svg.querySelector('path.path_selected');
+    if (path1 || path2) {
+    // Supprimer le <svg> du DOM
+    svg.remove();
+    }
+   
+    });
+},
+
+addSVGs: function(image, type) {
+    // Créer un SVG avec le path pour le contour
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 200 200"); // Dimensions originales du PNG
+    
+     // Créer un path pour un contour
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    /* ICI, en rouge, c’est le PATH que l’on retrouve en bas de fichier SVG*/
+    path.setAttribute("d", "m 105.0034,174.96362 c -6.770681,-0.80075 -15.634114,-2.57047 -19.69652,-3.9327 -4.860669,-1.62992 -10.921923,-2.72351 -17.726866,-3.19833 -8.247341,-0.57549 -11.350141,-1.23671 -15.327288,-3.2663 -12.370853,-6.313 -20.395061,-22.23693 -20.395061,-40.47367 0,-21.92022 10.40745,-36.209191 27.28004,-37.454281 3.289135,-0.24272 6.969321,-0.641673 8.178192,-0.886572 2.819798,-0.571248 5.188247,-5.146885 5.188247,-10.023232 0,-6.079248 3.569251,-18.344131 7.569827,-26.011915 12.023957,-23.045956 38.422549,-32.241214 61.032479,-21.259064 7.05219,3.425408 15.65847,11.569753 18.75611,17.749405 5.12223,10.218577 7.13473,24.804033 5.23987,37.975325 -1.11434,7.745775 -1.07004,8.983113 0.4248,11.863151 3.75653,7.237643 3.46696,17.915383 -1.06659,39.331073 -1.82146,8.60419 -6.81191,24.15861 -8.65729,26.9832 -2.90134,4.44101 -9.25193,9.47851 -14.34044,11.37538 -7.14783,2.66451 -20.51044,3.11476 -36.45951,1.22853 z");
+    
+     if(type == "selectable")
+     {
+     // Ajouter la classe 'selectable' au div d'image
+     image.classList.add('selectable_thumb_pannel');
+     // Ajouter la classe 'selectable' au path (contour jaune)
+     path.setAttribute("class", "path_selectable");
+     }
+     if(type == "selected")
+     {
+     // Ajouter la classe 'selected' au div d'image
+     //image.classList.add('selected_thumb_pannel');
+     // Ajouter la classe 'selectable' au path (contour pointillé jaune)
+     path.setAttribute("class", "path_selected");
+     }
+     // Ajouter le path au SVG
+     svg.appendChild(path);
+    
+     // Ajouter le SVG en tant qu'élément enfant du div d'image
+     image.appendChild(svg);
+},
+
 
 
 
@@ -457,7 +523,7 @@ onSelect: function(evt) {
     this.stopEvent( evt );
 
     if(this.isCurrentPlayerActive() && !this._helpMode) {
-        if(evt.currentTarget.classList.contains('selectable')) {
+        if((evt.currentTarget.classList.contains('selectable')) || (evt.currentTarget.classList.contains('selectable_thumb_pannel'))) {
         
             console.log( 'actSelect', evt.currentTarget.id);
             this.bgaPerformAction('actSelect', { arg1: evt.currentTarget.id });
