@@ -1665,6 +1665,8 @@ class Pending extends APP_GameClass
 
         $ret['title'] = clienttranslate('${actplayer} must choose a Thumb action');
 
+        $ret["selected"][] = 'icon_thumb_'.$this->player_id;
+
         $plants_market = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
         $rooms_market = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
         $tiles_market = self::getObjectListFromDB("SELECT card_id FROM tile WHERE card_location = 'market'", true);
