@@ -584,21 +584,21 @@ font-family: "MyriadPro";
 .icon {
   width: var(--tile-width);
   height: var(--tile-width);
-  background-image: url("img/VE_Icons_2.png");
+  background-image: url("img/VE_Icons_3.png");
   background-size: 600% 200%;
 }
 
 .pot {
   width: var(--pot-width);
   height: var(--pot-width);
-  background-image: url("img/VE_Icons_2.png");
+  background-image: url("img/VE_Icons_3.png");
   background-size: 600% 200%;
 }
 
 .minipot {
   width: var(--minipot-width);
   height: var(--minipot-width);
-  background-image: url("img/VE_Icons_2.png");
+  background-image: url("img/VE_Icons_3.png");
   background-size: 600% 200%;
   position: relative;
 }
@@ -622,7 +622,7 @@ font-family: "MyriadPro";
 .big-icon { /* bag */
   width: calc(var(--tile-width) * 2);
   height: calc(var(--tile-width) * 2);
-  background-image: url("img/VE_Icons_2.png");
+  background-image: url("img/VE_Icons_3.png");
   background-size: 600% 200%;
 }
 
