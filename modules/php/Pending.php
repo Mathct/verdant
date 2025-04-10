@@ -409,9 +409,10 @@ class Pending extends APP_GameClass
             }
 
 
-            if($tile_market_type != null) {
+            if(($tile_market_type != null)&&($tile_reserve_type != null)) {
                 $ret['buttons'][] = 'store';
             }
+            
             else {
                 $ret['buttons'][] = 'pass';
             }

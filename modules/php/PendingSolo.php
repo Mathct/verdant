@@ -407,11 +407,11 @@ class PendingSolo extends APP_GameClass
                 $ret["selectable"][] = 'icon_thumb_'.$this->player_id;
             }
 
-
-
-            if($tile_market_type != null) {
+            
+            if(($tile_market_type != null)&&($tile_reserve_type != null)) {
                 $ret['buttons'][] = 'store';
             }
+            
             else {
                 $ret['buttons'][] = 'pass';
             }
