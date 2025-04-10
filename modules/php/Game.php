@@ -2945,10 +2945,17 @@ class Game extends \Table
 
             $card_after = self::getPlant("card_type = {$card_firstplant_type}");
 
+            $color_type = ['bf1c75', 'ffc219', '2d3691', '00b1bc', 'dc5526'];
+            $card_color = $color_type[game::$instance->_PLANT_CARDS[$card_firstplant_type]['type'] -1];
+
             game::$instance->notifyAllPlayers(
                 'moveCardToHouse',
-                clienttranslate('${player_name} places a plant in the house'),
+                clienttranslate('${player_name} places ${plant} in the house'),
                 array(
+                    'plant' =>    [
+                            'log' => '<b style="color: #${color};">${plant_name}</b>',
+                            'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_firstplant_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
+                        ],
                     'player_name' => $player_name,
                     'card_before' => $card_before,
                     'card_after' => $card_after

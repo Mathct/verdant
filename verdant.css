@@ -94,7 +94,7 @@ body {
     font-family: MinionPro;
     font-size: 24pt;
     font-variant: small-caps;
-    color: #1f3a21;
+    color: #815a18;
     font-weight: bold;
   }
   
@@ -109,8 +109,9 @@ body {
     .tooltip_subtitle {
     font-family: MinionPro;
     font-size: 16pt;
+    font-variant: small-caps;
     /*color:#719e1f;*/
-    color: #1f3a21;
+     color: #815a18;
   }
   
   .tooltip_desc {
@@ -560,7 +561,15 @@ font-family: "MyriadPro";
   box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
 }
 
-
+.big-card {
+  width: calc( 2 * var(--card-width));
+  height: calc( 2 * var(--card-height));
+  background-image: url("img/VE_Rooms.jpg");
+  background-size: 1200% 600%;
+  border-radius: 4px;
+  box-shadow: 3px 3px 3px rgba(0, 0, 0, 0.5);
+  position: relative;
+}
 
 
 
@@ -587,6 +596,21 @@ font-family: "MyriadPro";
   background-image: url("img/VE_Icons_3.png");
   background-size: 600% 200%;
 }
+
+.inline-icon {
+  width: 16pt;
+  height: 16pt;
+  display: inline-block;
+  background-image: url("img/VE_Icons_3.png");
+  background-size: 600% 200%;
+  vertical-align: middle;
+}
+
+.verdancy {
+  background-position: -500% -100%;
+} 
+
+
 
 .pot {
   width: var(--pot-width);
@@ -936,16 +960,15 @@ font-family: "MyriadPro";
 
 
 /* THOUN Help Button */
-#verdant_help_button {
+
+.verdant-help-button {
   display: flex;
   justify-content: center;
   align-items: center;
   position: fixed;
-  bottom: 12px;
   left: 5px;
   width: 50px;
   height: 50px;
-  background: #60c2cb;
   font-weight: bold;
   color: white;
   border-radius: 50%;
@@ -953,6 +976,21 @@ font-family: "MyriadPro";
   cursor: pointer;
   z-index: 949;
   font-size: 28pt;
+}
+
+#verdant_help3 {
+  bottom: 140px;
+  background: #cba960;
+}
+
+#verdant_help2 {
+  bottom: 76px;
+  background: #a960cb;
+}
+
+#verdant_help1 {
+  bottom: 12px;
+  background: #60c2cb;
 }
 
 .modal {

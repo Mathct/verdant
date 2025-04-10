@@ -2060,7 +2060,8 @@ setupCounters: function() {
 addHelp: function() {
     // Créer l'élément bouton
     const helpButton = document.createElement('div');
-    helpButton.id = 'verdant_help_button';
+    helpButton.id = 'verdant_help1';
+    helpButton.className = 'verdant-help-button';
     helpButton.textContent = '?';
 
     // Ajouter le bouton au body
@@ -2070,6 +2071,32 @@ addHelp: function() {
     helpButton.addEventListener('click', () => {
         this.showHelpModal();
     });
+
+    // Créer l'élément bouton
+    const helpButton2 = document.createElement('div');
+    helpButton2.id = 'verdant_help2';
+    helpButton2.className = 'verdant-help-button';
+    helpButton2.textContent = '?';
+
+    // Ajouter le bouton au body
+    document.body.appendChild(helpButton2);
+
+    // Ajouter un gestionnaire d'événement pour afficher une aide (modifiable selon besoin)
+    helpButton2.addEventListener('click', () => {
+        this.showHelpModal2();
+    });
+    const helpButton3 = document.createElement('div');
+    helpButton3.id = 'verdant_help3';
+    helpButton3.className = 'verdant-help-button';
+    helpButton3.textContent = '?';
+
+    // Ajouter le bouton au body
+    document.body.appendChild(helpButton3);
+
+    // Ajouter un gestionnaire d'événement pour afficher une aide (modifiable selon besoin)
+    helpButton3.addEventListener('click', () => {
+        this.showHelpModal3();
+    });      
 },
 
 
@@ -2147,7 +2174,136 @@ showHelpModal: function() {
     });
 },
 
+showHelpModal2: function() {
+    // Vérifie si la modale existe déjà
+    if (document.getElementById('helpModal2')) return;
 
+    // Création de la modale
+    const modal = document.createElement('div');
+    modal.id = 'helpModal2';
+    modal.className = 'modal';
+
+ 
+    let html = '<div class="modal-content">';
+    html += '<span class="close">&times;</span>';
+    html += '<div class="tooltip_content">';
+
+    html += `<div class="tile_container">
+            <div id="ve_score_toolt" class="big-card" style="background-position: -700% -500%;"></div>
+            </div>`;
+
+    // Ajout des informations à droite
+    html += `<div class="info_container">`;
+
+    html += "<div class='tooltip_bigtitle'>"+_('Scoring')+"</div>";
+
+    html += "<div class='tooltip_subtitle'>"+_('Completed Plants')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Points indicated below ')+"<span class='inline-icon verdancy' ></span>"+_(' requirement for each completed Plant Card.')+"</div>";
+
+    html += "<br><div class='tooltip_subtitle'>"+_('Extra Verdancy')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Each player scores half of the total number of ')+"<span class='inline-icon verdancy' ></span>"+_(' on incomplete plants.')+"</div>";
+
+    html += "<br><div class='tooltip_subtitle'>"+_('Pots')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Concrete pots score 3 points, Wood pots score 2 points and Ceramic pots score 1 point.')+"</div>";
+
+
+    html += "<br><div class='tooltip_subtitle'>"+_('Rooms')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('1 point scored per adjacent matching plant. Matching Pet/Furniture doubles the points.')+"</div>";
+    
+    html += "<br><div class='tooltip_subtitle'>"+_('Items')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('1, 3, 6, 9, 12, 16, 20, 25 points scored for unique Pet/Furniture tokens in their home.')+"</div>";
+
+    html += "<br><div class='tooltip_subtitle'>"+_('Collector & Decorator')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('3 points if home contains at least 1 of the 5 different plant types.')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('3 points if home contains at least 1 of the 5 different room types.')+"</div>";
+
+    html += '</div>'
+
+    html += '</div></div>';
+
+    modal.innerHTML = html;
+
+
+    document.body.appendChild(modal);
+
+    // Sélection des éléments de la modale
+    const closeButton = modal.querySelector('.close');
+
+    // Affichage de la modale
+    modal.style.display = 'flex';
+
+    // Fermeture en cliquant sur la croix
+    closeButton.addEventListener('click', () => modal.remove());
+
+    // Fermeture en cliquant en dehors de la modale
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) modal.remove();
+    });
+},
+
+showHelpModal3: function() {
+    // Vérifie si la modale existe déjà
+    if (document.getElementById('helpModal2')) return;
+
+    // Création de la modale
+    const modal = document.createElement('div');
+    modal.id = 'helpModal2';
+    modal.className = 'modal';
+
+ 
+    let html = '<div class="modal-content">';
+    html += '<span class="close">&times;</span>';
+    html += '<div class="tooltip_content">';
+
+    html += `<div class="tile_container">
+            <div id="ve_score_toolt" class="big-card" style="background-position: -800% -500%;"></div>
+            </div>`;
+
+    // Ajout des informations à droite
+    html += `<div class="info_container">`;
+
+    html += "<div class='tooltip_bigtitle'>"+_('Green  Thumb Actions')+"</div>";
+
+    html += "<div class='tooltip_subtitle'>"+_('Spend 2 Thumbs at the start of your round')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Wipe any number of cards without any thumbs.')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Wipe any number of tokens without any thumbs.')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Draft any card and any token.')+"</div>";
+    html += "<div class='tooltip_subtitle'>"+_('Spend 2 Thumbs during your round')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Add 1 ')+"<span class='inline-icon verdancy' ></span>"+_(' to any plant.')+"</div>";
+
+    html += "<br><div class='tooltip_bigtitle'>"+_('Nurture Actions')+"</div>";
+    html += "<div class='tooltip_subtitle'>"+_('Fertilizer')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Add up to 3 ')+"<span class='inline-icon verdancy' ></span>"+_(' to 1 plant.')+"</div>";
+
+    html += "<br><div class='tooltip_subtitle'>"+_('Hand Trowel')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Add 1 ')+"<span class='inline-icon verdancy' ></span>"+_(' to up to 3 plants.')+"</div>";
+
+
+    html += "<br><div class='tooltip_subtitle'>"+_('Watering Can')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('Add 1 ')+"<span class='inline-icon verdancy' ></span>"+_(' to all plants adjacent to a single room.')+"</div>";
+    
+    html += '</div>'
+
+    html += '</div></div>';
+
+    modal.innerHTML = html;
+
+    document.body.appendChild(modal);
+
+    // Sélection des éléments de la modale
+    const closeButton = modal.querySelector('.close');
+
+    // Affichage de la modale
+    modal.style.display = 'flex';
+
+    // Fermeture en cliquant sur la croix
+    closeButton.addEventListener('click', () => modal.remove());
+
+    // Fermeture en cliquant en dehors de la modale
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) modal.remove();
+    });
+},
 
 /*  _____           _ _   _            */
 /* |_   _|__   ___ | | |_(_)_ __  ___  */
@@ -2208,22 +2364,22 @@ setupTooltips:function () {
 
 
     html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Room Bonuses')+"</span>";
-    html += "<span class='tooltip_desc'>"+_('1 Point scored per adjacent matching plant. Matching Pet/Furniture doubles the points.')+"</span></div>";
+    html += "<span class='tooltip_desc'>"+_('1 point scored per adjacent matching plant. Matching Pet/Furniture doubles the points.')+"</span></div>";
     this.addCustomTooltip( `score_line_5`, html);
 
 
     html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Furniture and Pets')+"</span>";
-    html += "<span class='tooltip_desc'>"+_('1,3,6,9,12,16,20,25 points scored for unique Pet/Furniture tokens in their home.')+"</span></div>";
+    html += "<span class='tooltip_desc'>"+_('1, 3, 6, 9, 12, 16, 20, 25 points scored for unique Pet/Furniture tokens in their home.')+"</span></div>";
     this.addCustomTooltip( `score_line_6`, html);   
 
 
     html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Plant Collector Bonus')+"</span>";
-    html += "<span class='tooltip_desc'>"+_('3 points if home contains at 1 of the 5 different plant types.')+"</span></div>";
+    html += "<span class='tooltip_desc'>"+_('3 points if home contains at least 1 of the 5 different plant types.')+"</span></div>";
     this.addCustomTooltip( `score_line_7`, html);
 
 
     html = "<div class='tooltip_content'><span class='tooltip_subtitle'>"+_('Decorator Bonus')+"</span>";
-    html += "<span class='tooltip_desc'>"+_('3 points if home contains at 1 of the 5 different room types.')+"</span></div>";
+    html += "<span class='tooltip_desc'>"+_('3 points if home contains at least 1 of the 5 different room types.')+"</span></div>";
     this.addCustomTooltip( `score_line_8`, html);
 
 
