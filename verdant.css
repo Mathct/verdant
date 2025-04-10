@@ -195,6 +195,14 @@ font-family: "MyriadPro";
 }
 
 
+.log-plant[style*="color: #ffc219"] {
+  text-shadow: 1px 0 0 black, 0 1px 0 black, -1px 0 0 black, 0 -1px 0 black,
+               1px 1px 0 black, -1px 1px 0 black, 1px -1px 0 black, -1px -1px 0 black !important;
+  background-color: transparent !important;
+}
+
+
+
 
 /* Conteneur principal */
 #resized_id {
@@ -808,6 +816,18 @@ font-family: "MyriadPro";
     background-size: 100% 100%;
     border-radius: 6px;
     margin-left: 0;
+}
+
+/* LOG ROOM */
+
+.log-room {
+  width: 30px;
+  height: 47px;
+  display:inline-block;
+  vertical-align: middle;
+  background-image: url("img/log_room.jpg");
+  background-size: 500% 100%;
+  border-radius: 6px;
 }
 
 

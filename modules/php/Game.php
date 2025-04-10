@@ -2953,7 +2953,7 @@ class Game extends \Table
                 clienttranslate('${player_name} places ${plant} in the house'),
                 array(
                     'plant' =>    [
-                            'log' => '<b style="color: #${color};">${plant_name}</b>',
+                            'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
                             'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_firstplant_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
                         ],
                     'player_name' => $player_name,

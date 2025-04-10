@@ -186,7 +186,7 @@ class Pending extends APP_GameClass
                     clienttranslate('${player_name} places ${plant} in the house'),
                     array(
                         'plant' =>    [
-                            'log' => '<b style="color: #${color};">${plant_name}</b>',
+                            'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
                             'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
                         ],
                         'player_name' => $this->player_name,
@@ -214,15 +214,15 @@ class Pending extends APP_GameClass
 
                 $card_after = game::$instance->getRoom("card_id = {$card_id}");
 
-                $card_color = $this->color_type[game::$instance->_ROOM_CARDS[$card_type]['type'] -1];
+                $card_log_type = (game::$instance->_ROOM_CARDS[$card_type]['type'] -1)*(-100) ;
 
                 game::$instance->notifyAllPlayers(
                     'moveCardToHouse',
-                    clienttranslate('${player_name} places a ${room} in the house'),
+                    clienttranslate('${player_name} places ${room} in the house'),
                     array(
                         'room' =>    [
-                            'log' => '<b style="color: #${color};">${room_name}</b>',
-                            'args' => ['room_name' => clienttranslate('room'), 'color' => $card_color, 'i18n' => ['room_name']]
+                            'log' => '<div class="log-room" style="background-position-x: ${position}%;"></div>',
+                            'args' => ['position' => $card_log_type]
                         ],
                         'player_name' => $this->player_name,
                         'card_before' => $card_before,
@@ -307,7 +307,7 @@ class Pending extends APP_GameClass
                     clienttranslate('${player_name} places ${plant} in the house'),
                     array(
                         'plant' =>    [
-                            'log' => '<b style="color: #${color};">${plant_name}</b>',
+                            'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
                             'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
                         ],
                         'player_name' => $this->player_name,
@@ -335,15 +335,15 @@ class Pending extends APP_GameClass
 
                 $card_after = game::$instance->getRoom("card_id = {$card_id}");
 
-                $card_color = $this->color_type[game::$instance->_ROOM_CARDS[$card_type]['type'] -1];
+                $card_log_type = (game::$instance->_ROOM_CARDS[$card_type]['type'] -1)*(-100) ;
 
                 game::$instance->notifyAllPlayers(
                     'moveCardToHouse',
-                    clienttranslate('${player_name} places a ${room} in the house'),
+                    clienttranslate('${player_name} places ${room} in the house'),
                     array(
-                       'room' =>    [
-                            'log' => '<b style="color: #${color};">${room_name}</b>',
-                            'args' => ['room_name' => clienttranslate('room'), 'color' => $card_color, 'i18n' => ['room_name']]
+                        'room' =>    [
+                            'log' => '<div class="log-room" style="background-position-x: ${position}%;"></div>',
+                            'args' => ['position' => $card_log_type]
                         ],
                         'player_name' => $this->player_name,
                         'card_before' => $card_before,
@@ -1925,7 +1925,7 @@ class Pending extends APP_GameClass
                     clienttranslate('${player_name} places ${plant} in the house'),
                     array(
                         'plant' =>    [
-                            'log' => '<b style="color: #${color};">${plant_name}</b>',
+                            'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
                             'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
                         ],
                         'player_name' => $this->player_name,
@@ -1952,20 +1952,19 @@ class Pending extends APP_GameClass
 
                 $card_after = game::$instance->getRoom("card_id = {$card_id}");
 
-                $card_color = $this->color_type[game::$instance->_ROOM_CARDS[$card_type]['type'] -1];
+                $card_log_type = (game::$instance->_ROOM_CARDS[$card_type]['type'] -1)*(-100) ;
 
                 game::$instance->notifyAllPlayers(
                     'moveCardToHouse',
-                    clienttranslate('${player_name} places a ${room} in the house'),
+                    clienttranslate('${player_name} places ${room} in the house'),
                     array(
                         'room' =>    [
-                            'log' => '<b style="color: #${color};">${room_name}</b>',
-                            'args' => ['room_name' => clienttranslate('room'), 'color' => $card_color, 'i18n' => ['room_name']]
+                            'log' => '<div class="log-room" style="background-position-x: ${position}%;"></div>',
+                            'args' => ['position' => $card_log_type]
                         ],
                         'player_name' => $this->player_name,
                         'card_before' => $card_before,
                         'card_after' => $card_after
-
 
                     )
                 );
@@ -2073,7 +2072,7 @@ class Pending extends APP_GameClass
                     clienttranslate('${player_name} places ${plant} in the house'),
                     array(
                         'plant' =>    [
-                            'log' => '<b style="color: #${color};">${plant_name}</b>',
+                            'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
                             'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
                         ],
                         'player_name' => $this->player_name,
@@ -2100,20 +2099,19 @@ class Pending extends APP_GameClass
 
                 $card_after = game::$instance->getRoom("card_id = {$card_id}");
 
-                $card_color = $this->color_type[game::$instance->_ROOM_CARDS[$card_type]['type'] -1];
+                $card_log_type = (game::$instance->_ROOM_CARDS[$card_type]['type'] -1)*(-100) ;
 
                 game::$instance->notifyAllPlayers(
                     'moveCardToHouse',
-                    clienttranslate('${player_name} places a ${room} in the house'),
+                    clienttranslate('${player_name} places ${room} in the house'),
                     array(
                         'room' =>    [
-                            'log' => '<b style="color: #${color};">${room_name}</b>',
-                            'args' => ['room_name' => clienttranslate('room'), 'color' => $card_color, 'i18n' => ['room_name']]
+                            'log' => '<div class="log-room" style="background-position-x: ${position}%;"></div>',
+                            'args' => ['position' => $card_log_type]
                         ],
                         'player_name' => $this->player_name,
                         'card_before' => $card_before,
                         'card_after' => $card_after
-
 
                     )
                 );
