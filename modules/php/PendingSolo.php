@@ -157,6 +157,12 @@ class PendingSolo extends APP_GameClass
             {
             if($this->player_pref_confirm == 1)
             {
+                $thumbplayer = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id = '{$this->player_id}'");
+                if($thumbplayer >= 2)
+                {
+                    game::$instance->setGameStateValue('token_change_allowed',1);
+                }
+
                 $explode_market = explode('_', $parg1);
                 $explode_position = explode('_', $varg1);
 
@@ -277,6 +283,12 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == 'no') {
             game::$instance->addPending($this->player_id, "NormalTurn");
         } else {
+
+            $thumbplayer = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id = '{$this->player_id}'");
+            if($thumbplayer >= 2)
+            {
+                game::$instance->setGameStateValue('token_change_allowed',1);
+            }
             
             $explode_market = explode('_', $parg1);
             $explode_position = explode('_', $parg2);
@@ -393,7 +405,7 @@ class PendingSolo extends APP_GameClass
             }
         }
 
-
+        $testplant = 0;
 
         if (($tile_market_type != null) || ($tile_reserve_type != null)) {
 
@@ -405,10 +417,18 @@ class PendingSolo extends APP_GameClass
             if ((!empty($plants_without_pots)) && ($thumb >= 2)) {
                 $ret['buttons'][] = 'thumb';
                 $ret["selectable"][] = 'icon_thumb_'.$this->player_id;
+                $testplant = 1;
+            }
+
+            if(($tile_market_type != null) && ($testplant == 0) && ($thumb >= 2) && (game::$instance->getGameStateValue('token_change_allowed')==1))
+            {
+                $ret['buttons'][] = 'thumb';
+                $ret["selectable"][] = 'icon_thumb_'.$this->player_id;
+
             }
 
             
-            if(($tile_market_type != null)&&($tile_reserve_type != null)) {
+            if(($tile_market_type != null)&&($tile_reserve_type != null)&&($tile_market_type != $tile_reserve_type)) {
                 $ret['buttons'][] = 'store';
             }
             
@@ -551,6 +571,9 @@ class PendingSolo extends APP_GameClass
         } else {
             if($this->player_pref_confirm == 1)
             {
+            
+            game::$instance->setGameStateValue('token_change_allowed',0);
+
             $explode = explode('_', $varg1);
 
             $before_emplacement = self::getUniqueValueFromDB("SELECT card_location FROM tile WHERE card_id = '{$parg1}'");
@@ -637,6 +660,9 @@ class PendingSolo extends APP_GameClass
             $explode = explode(';', $parg1);
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
         } else {
+
+            game::$instance->setGameStateValue('token_change_allowed',0);
+
             $explode = explode(';', $parg1);
             $explode2 = explode('_', $parg2);
 
@@ -768,6 +794,7 @@ class PendingSolo extends APP_GameClass
 
             if(($this->player_pref_confirm == 1)||($type == 62))
             {
+                game::$instance->setGameStateValue('token_change_allowed',0);
             
             if ($type == 61) {
 
@@ -891,6 +918,7 @@ class PendingSolo extends APP_GameClass
                 $tests = [$position_room + 1, $position_room - 1, $position_room + 10, $position_room - 10];
 
                 foreach ($tests as $test) {
+                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
                     $pot_origin = 0;
                     $type_plant = self::getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location ='{$this->player_id}' AND card_location_arg='{$test}'");
                     if (($type_plant != null) && (!in_array($type_plant, $all_pots))) {
@@ -1048,6 +1076,8 @@ class PendingSolo extends APP_GameClass
             $explode = explode(';', $parg1);
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
         } else {
+            game::$instance->setGameStateValue('token_change_allowed',0);
+
             $explode2 = explode(';', $parg1);
             $explode = explode('_', $parg2);
             $type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$explode2[0]}'");
@@ -1158,6 +1188,7 @@ class PendingSolo extends APP_GameClass
                 $tests = [$position_room + 1, $position_room - 1, $position_room + 10, $position_room - 10];
 
                 foreach ($tests as $test) {
+                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
                     $pot_origin = 0;
                     $type_plant = game::$instance->getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location ='{$this->player_id}' AND card_location_arg='{$test}'");
                     if (($type_plant != null) && (!in_array($type_plant, $all_pots))) {
@@ -1758,7 +1789,7 @@ class PendingSolo extends APP_GameClass
         }
 
 
-
+        game::$instance->setGameStateValue('token_change_allowed',0);
         game::$instance->giveExtraTime($this->player_id);
         game::$instance->updateNbTurns();
         game::$instance->addPendingFirst($this->player_id, "NormalTurn");
@@ -1816,6 +1847,8 @@ class PendingSolo extends APP_GameClass
         $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
         $plants_without_pots = array_diff($all_plants, $all_pots);
 
+        $testplant = 0;
+
         if (!empty($plants_without_pots)) {
             foreach ($plants_without_pots as $plant) {
                 if($plant <= 60)
@@ -1824,8 +1857,9 @@ class PendingSolo extends APP_GameClass
                     $ret["selectablethumb"][] = 'plant_' . $plant;
                 }
                 if ($parg1 == 2) {
-                    $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy)');
+                    
                     $ret["selectable"][] = 'plant_' . $plant;
+                    $testplant = 1;
                 }
                 }
             }
@@ -1838,6 +1872,57 @@ class PendingSolo extends APP_GameClass
         if ($parg1 == 1) {
             $ret['buttons'][] = 'reset';
         }
+
+        if ($parg1 == 2) {
+
+            if ($parg2 == "FinalTurn") {
+                $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy)');
+            }
+
+            else {
+                $explode = explode('_', $parg2);
+                $tile = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location ='market' AND card_location_arg = '{$explode[1]}'");
+                if($tile != null)
+                {
+                    if(($testplant == 1)&&(game::$instance->getGameStateValue('token_change_allowed')==1))
+                    {
+                        $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy) or change the market token');
+                        $ret["selected"][] = 'tile_'.$tile;
+                        $othertiles = self::getObjectListFromDB( "SELECT card_id id FROM tile WHERE card_location ='market' AND card_location_arg != '{$explode[1]}'", true );
+                        foreach($othertiles as $other)
+                        {
+                            $ret["selectable"][] = 'tile_' . $other;
+                        }
+                    }
+
+                    if(($testplant == 1)&&(game::$instance->getGameStateValue('token_change_allowed')==0))
+                    {
+                        $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy)');
+                    }
+
+                    if(($testplant == 0)&&(game::$instance->getGameStateValue('token_change_allowed')==1))
+                    {
+                        $ret['titleyou'] = clienttranslate('${you} must change the market token');
+                        $ret["selected"][] = 'tile_'.$tile;
+                        $othertiles = self::getObjectListFromDB( "SELECT card_id id FROM tile WHERE card_location ='market' AND card_location_arg != '{$explode[1]}'", true );
+                        foreach($othertiles as $other)
+                        {
+                            $ret["selectable"][] = 'tile_' . $other;
+                        }
+                    }
+
+                    
+                }
+                else
+                {
+                    $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy)');
+                }
+                
+            }
+            
+
+        }
+
 
 
         $ret['buttons'][] = 'cancel';
@@ -1871,9 +1956,70 @@ class PendingSolo extends APP_GameClass
 
         if ($parg1 == 2) {
             if ($varg1 != "cancel") {
+                game::$instance->addPending($this->player_id, "UseThumbConfirm", $varg1, $parg2);
+            }
+
+            if ($varg1 == "cancel")
+            {
+                if ($parg2 == "FinalTurn") {
+                    game::$instance->addPending($this->player_id, "FinalTurn");
+                } else {
+                    
+                        $explode = explode('_', $parg2);
+                        game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
+                }
+
+            }
+
+            
+        }
+    }
+
+    function argUseThumbConfirm($parg1, $parg2)
+    {
+        $ret = array();
+        $ret["selectable"] = array();
+        $ret["selectablemulti"] = array();
+        $ret["selectablethumb"] = array();
+        $ret["card"] = array();
+        $ret["selected"] = array();
+        $ret['buttons'] = array();
+
+        $ret['title'] = clienttranslate('${actplayer} must choose a Thumb action');
+        $ret['titleyou'] = clienttranslate('${you} must confirm');
+
+        $ret["selected"][] = $parg1;
+
+        $ret['buttons'][] = 'yes';
+        $ret['buttons'][] = 'no';  
+
+
+
+        return $ret;
+    }
+
+    function UseThumbConfirm($parg1, $parg2, $varg1, $varg2)
+    {
+        if($varg1 == 'no')
+        {
+            if ($parg2 == "FinalTurn") {
+                game::$instance->addPending($this->player_id, "FinalTurn");
+            } else {
+                
+                    $explode = explode('_', $parg2);
+                    game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
+                
+            }
+
+        }
+
+        else
+        {
+            if (strpos($parg1, "plant") === 0)
+            {
 
                 $pot_origin = 0;
-                $explode = explode('_', $varg1);
+                $explode = explode('_', $parg1);
                 if($explode[1] <= 60)
                 {
                 $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
@@ -1929,7 +2075,7 @@ class PendingSolo extends APP_GameClass
                         'pot_origin' => $pot_origin
                     )
                 );
-            }
+                }
 
             else
                 {
@@ -1951,24 +2097,64 @@ class PendingSolo extends APP_GameClass
                 self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
 
                 $icon = '<span class="thumb_bt"></span>';
-            game::$instance->notifyAllPlayers(
+                game::$instance->notifyAllPlayers(
                 'message',
                 clienttranslate('${player_name} uses ${icon}'),
                 array(
                     'player_name' => $this->player_name,
                     'icon' => $icon,
                 )
-            );
+                );
 
             }
+
+            if (strpos($parg1, "tile") === 0)
+            {
+                self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+
+                $icon = '<span class="thumb_bt"></span>';
+                game::$instance->notifyAllPlayers(
+                'message',
+                clienttranslate('${player_name} uses ${icon}'),
+                array(
+                    'player_name' => $this->player_name,
+                    'icon' => $icon,
+                )
+                );
+
+                game::$instance->notifyAllPlayers(
+                    'useThumbs',
+                    '',
+                    array(
+                        'player_name' => $this->player_name,
+                        'player_id' => $this->player_id,
+    
+                    )
+                );
+
+            }
+        
 
             if ($parg2 == "FinalTurn") {
                 game::$instance->addPending($this->player_id, "FinalTurn");
             } else {
-                $explode = explode('_', $parg2);
-                game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
+                if (strpos($parg1, "tile") === 0)
+                {
+                    $explode = explode('_', $parg1);
+                    $newplace = self::getUniqueValueFromDB("SELECT card_location_arg FROM tile WHERE card_id = '{$explode[1]}'");
+                    game::$instance->addPending($this->player_id, "NormalTurnStep3", $newplace);
+                }
+                else{
+                    $explode = explode('_', $parg2);
+                    game::$instance->addPending($this->player_id, "NormalTurnStep3", $explode[1]);
+                }
             }
+
         }
+        
+
+        
+
     }
 
 

@@ -86,9 +86,9 @@ setup: function( gamedatas )
     this.room_deck_counter = gamedatas.rooms_deck;
 
     this.timer = 5;
-    let timerPreference = this.getGameUserPreference(101);
-    if (timerPreference !== null && timerPreference !== undefined) {
-        this.timer = timerPreference;
+    //let timerPreference = this.getGameUserPreference(101);
+    if (this.getGameUserPreference(101) !== null && this.getGameUserPreference(101) !== undefined) {
+        this.timer = this.getGameUserPreference(101);
     }
  
 

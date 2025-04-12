@@ -69,6 +69,7 @@ class Game extends \Table
             "item_goal" => 12,
             "last_turn" => 13,
             "end_game" => 14,
+            "token_change_allowed" => 15,
         ]);
 
         self::$instance = $this; // ATTENTION
@@ -156,6 +157,9 @@ class Game extends \Table
 
         $this->setGameStateInitialValue('last_turn', 0);
         $this->setGameStateInitialValue('end_game', 0);
+        $this->setGameStateInitialValue('token_change_allowed', 0);
+
+        
 
 
         $nbreplayers = count($players);
