@@ -523,6 +523,20 @@ class Game extends \Table
         }
 
 
+        // Reparation de table
+        
+        /*$countplayer = count(self::getObjectListFromDB("SELECT player_id id FROM player", true));
+        $name = self::getUniqueValuefromDB("SELECT player_name FROM player WHERE player_no = 1");
+
+        if(($countplayer == 1)&&($name == 'BrdG4meLvr'))
+        {
+            game::$instance->DbQuery("UPDATE pot set card_location = 91272105 WHERE card_id = 7");
+            game::$instance->DbQuery("UPDATE pot set card_location_arg = 51 WHERE card_id = 7");
+            game::$instance->DbQuery("UPDATE pot set card_location = 91272105 WHERE card_id = 6");
+            game::$instance->DbQuery("UPDATE pot set card_location_arg = 25 WHERE card_id = 6");
+        }*/
+
+
         return $result;
     }
 
