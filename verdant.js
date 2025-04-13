@@ -2214,8 +2214,8 @@ showHelpModal2: function() {
     html += "<div class='tooltip_desc'>"+_('1, 3, 6, 9, 12, 16, 20, 25 points scored for unique Pet/Furniture tokens in their home.')+"</div>";
 
     html += "<br><div class='tooltip_subtitle'>"+_('Collector & Decorator')+"</div>";
-    html += "<div class='tooltip_desc'>"+_('3 points if home contains at least 1 of the 5 different plant types.')+"</div>";
-    html += "<div class='tooltip_desc'>"+_('3 points if home contains at least 1 of the 5 different room types.')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('3 points if home contains all of the 5 different plant types.')+"</div>";
+    html += "<div class='tooltip_desc'>"+_('3 points if home contains all of the 5 different room types.')+"</div>";
 
     html += '</div>'
 
