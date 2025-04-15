@@ -709,6 +709,17 @@ font-family: "MyriadPro";
 }
 
 
+.points {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: var(--pot-width);
+  height: var(--pot-width);
+  background-image: url("img/VE_Points.png");
+  background-size: 1200% 100%;
+}
+
 
 /*     _          _                 _   _                  */
 /*    / \   _ __ (_)_ __ ___   __ _| |_(_) ___  _ __  ___  */

@@ -1486,8 +1486,7 @@ addPotToHouse: function(pot) {
     const pot_sprite = 3- pot.type;
 
     const housePotHTML = `
-        <div id="pot_${pot.id}" class="pot house-pot" 
-            style="background-position: -${pot_sprite}00% 0%; ">
+        <div id="pot_${pot.id}" class="pot house-pot" style="background-position: -${pot_sprite}00% 0%; ">
         </div>
     `;
 
@@ -1747,10 +1746,11 @@ animatePotAppearance: function(plant_type, pot_value) { //checked
         const pot_sprite = 3 - pot_value;
 
         const housePotHTML = `
-            <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear"
-                style="background-position: -${pot_sprite}00% 0%;">
+            <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear" style="background-position: -${pot_sprite}00% 0%;">
             </div>
         `;
+
+        
 
         cardElement.insertAdjacentHTML('beforeend', housePotHTML);
 
@@ -1773,8 +1773,7 @@ animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checke
         const pot_sprite = 3 - pot_value;
 
         const housePotHTML = `
-            <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear"
-                style="background-position: -${pot_sprite}00% 0%;">
+            <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear" style="background-position: -${pot_sprite}00% 0%;">
             </div>
         `;
 
@@ -1915,8 +1914,24 @@ removeFourthColumn: async function () {
         if (marketCell.firstElementChild) {
             const child = marketCell.firstElementChild; // Récupérer l'unique enfant de la cellule
 
+            const childId = child.id;
+
+            // Vérifie s'il commence par "pot_"
+            if (childId.startsWith('pot_')) {
+                const potNum = parseInt(childId.split('_')[1]);
+
+                if (potNum >= 1 && potNum <= 4) {
+                    this.pot_discard_counter[3].incValue(1);
+                } else if (potNum >= 5 && potNum <= 8) {
+                    this.pot_discard_counter[2].incValue(1);
+                } else if (potNum >= 9 && potNum <= 12) {
+                    this.pot_discard_counter[1].incValue(1);
+                }
+                // Si potNum > 12 => on ne fait rien
+            }
+
             // Animations et suppression du token (enfant)
-            await this.animateAndRemoveToken(child.id); 
+            await this.animateAndRemoveToken(childId); 
             await delay(200); // Petit délai pour éviter un retrait trop rapide
         }
     }
@@ -2746,6 +2761,29 @@ onScreenWidthChange: function () {
 },
 
 updateLayout: function () {
+/*    var gameWidth = TABLE_WIDTH;
+    var gameHeight = TABLE_HEIGHT;
+
+    var horizontalScale = document.getElementById('game_play_area').clientWidth / gameWidth;
+    var verticalScale = (window.innerHeight - 0) / gameHeight;
+
+    var scale = Math.min(1, horizontalScale, verticalScale);
+
+    var resized_div = document.getElementById('resized_id');
+    var board = document.getElementById('board_id');
+
+    if (!resized_div || !board) {
+        console.warn('updateLayout aborted: missing resized_id or board_id');
+        return;
+    }
+    else {
+        console.log('updateLayout');
+    }
+
+    var play_area_height = dojo.marginBox(board).h;
+
+    resized_div.style.transform = scale === 1 ? '' : "scale(" + scale + ")";
+    dojo.style(resized_div, 'height', (play_area_height * scale) + 'px');*/
 },
 
 ///////////////////////////////////////////////////////////////////////////////// 
@@ -3128,7 +3166,7 @@ notif_showFinalScores: async function(args) {
     this.showFinalScores(args.final_scores); 
 },
 
-
+            //<div id="points_${pot.id}" class="points" style="background-position: -${pot.type}00% 0%; "></div>
 
 notif_score: async function( args ){
     

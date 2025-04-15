@@ -1531,7 +1531,7 @@ class Game extends \Table
             '',
             array(
                 'final_scores' => $final_scores,
-
+                'pots_scored' => $pots
             )
         );
     }

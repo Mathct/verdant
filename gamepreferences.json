@@ -18,7 +18,7 @@
 
     "101": {
     "name": "Timer",
-    "needReload": false,
+    "needReload": true,
     "values": {
       "20": {
         "name": "20 seconds"
