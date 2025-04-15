@@ -159,7 +159,7 @@ class Game extends \Table
         $this->setGameStateInitialValue('end_game', 0);
         $this->setGameStateInitialValue('token_change_allowed', 0);
 
-        
+
 
 
         $nbreplayers = count($players);
@@ -474,6 +474,9 @@ class Game extends \Table
         $result["rooms"] = self::getObjectListFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_location NOT IN ('deck', 'discard')");
         $result["tiles"] = self::getObjectListFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_location NOT IN ('deck', 'discard')");
         $result["pots"] = self::getObjectListFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM pot WHERE card_location != 'deck'");
+        $result["pots_scored"] = self::getObjectListFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM pot WHERE card_location NOT IN ('deck', 'discard', 'market')");
+
+
 
         $result["plant_goal"] = self::getGameStateValue('plant_goal');
         $result["item_goal"] = self::getGameStateValue('item_goal');
@@ -524,7 +527,7 @@ class Game extends \Table
 
 
         // Reparation de table
-        
+
         /*$countplayer = count(self::getObjectListFromDB("SELECT player_id id FROM player", true));
         $name = self::getUniqueValuefromDB("SELECT player_name FROM player WHERE player_no = 1");
 
@@ -1328,11 +1331,11 @@ class Game extends \Table
 
 
             //if ($plant['type_arg'] == -1) {
-                foreach ($pots as $pot) {
-                    if ($pot['location_arg'] == $plant['type']) {
-                        $final_scores[$player_id]['completed_plants'] += $plant_infos['points'];
-                    }
+            foreach ($pots as $pot) {
+                if ($pot['location_arg'] == $plant['type']) {
+                    $final_scores[$player_id]['completed_plants'] += $plant_infos['points'];
                 }
+            }
             //}
 
             if ($plant['type_arg'] == -2) {
@@ -1490,7 +1493,7 @@ class Game extends \Table
 
         /// MODE AVANCE ////
 
-        if (($this->getGameStateValue('game_mode') == 2)||($this->getGameStateValue('game_mode') == 3)) {
+        if (($this->getGameStateValue('game_mode') == 2) || ($this->getGameStateValue('game_mode') == 3)) {
 
             foreach ($players as $player) {
                 $final_scores[$player]['plant_goal'] = 0;
@@ -2964,16 +2967,16 @@ class Game extends \Table
             $card_after = self::getPlant("card_type = {$card_firstplant_type}");
 
             $color_type = ['bf1c75', 'ffc219', '2d3691', '00b1bc', 'dc5526'];
-            $card_color = $color_type[game::$instance->_PLANT_CARDS[$card_firstplant_type]['type'] -1];
+            $card_color = $color_type[game::$instance->_PLANT_CARDS[$card_firstplant_type]['type'] - 1];
 
             game::$instance->notifyAllPlayers(
                 'moveCardToHouse',
                 clienttranslate('${player_name} places ${plant} in the house'),
                 array(
                     'plant' =>    [
-                            'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
-                            'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_firstplant_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
-                        ],
+                        'log' => '<b class="log-plant" style="color: #${color};">${plant_name}</b>',
+                        'args' => ['plant_name' => game::$instance->_PLANT_CARDS[$card_firstplant_type]['name'], 'color' => $card_color, 'i18n' => ['plant_name']]
+                    ],
                     'player_name' => $player_name,
                     'card_before' => $card_before,
                     'card_after' => $card_after

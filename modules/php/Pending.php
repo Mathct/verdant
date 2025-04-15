@@ -1451,8 +1451,19 @@ class Pending extends APP_GameClass
                 }
             }
 
+            $nextplayer = game::$instance->getPlayerAfter( $this->player_id );
+            $possible_plant = game::$instance->PossiblePosition($nextplayer, 'plant_0');
+            $possible_room = game::$instance->PossiblePosition($nextplayer, 'room_0');
 
-            game::$instance->addPending($this->player_id, "RefillMarket");
+            if(($possible_plant != null)||($possible_room != null))
+            {
+                game::$instance->addPending($this->player_id, "RefillMarket");
+            }
+            else
+            {
+                game::$instance->getFinalResults();
+                game::$instance->addPending($this->player_id, "EndOfGame");
+            }
             }
 
             if($this->player_pref_confirm == 2)
@@ -1584,7 +1595,19 @@ class Pending extends APP_GameClass
             }
 
 
-            game::$instance->addPending($this->player_id, "RefillMarket");
+            $nextplayer = game::$instance->getPlayerAfter( $this->player_id );
+            $possible_plant = game::$instance->PossiblePosition($nextplayer, 'plant_0');
+            $possible_room = game::$instance->PossiblePosition($nextplayer, 'room_0');
+
+            if(($possible_plant != null)||($possible_room != null))
+            {
+                game::$instance->addPending($this->player_id, "RefillMarket");
+            }
+            else
+            {
+                game::$instance->getFinalResults();
+                game::$instance->addPending($this->player_id, "EndOfGame");
+            }
         }
     }
 
@@ -1623,7 +1646,19 @@ class Pending extends APP_GameClass
         if (($varg1 == 'thumb')||($varg1 == 'icon_thumb_'.$this->player_id)) {
             game::$instance->addPending($this->player_id, "UseThumb", 2, "FinalTurn");
         } else {
-            game::$instance->addPending($this->player_id, "RefillMarket");
+            $nextplayer = game::$instance->getPlayerAfter( $this->player_id );
+            $possible_plant = game::$instance->PossiblePosition($nextplayer, 'plant_0');
+            $possible_room = game::$instance->PossiblePosition($nextplayer, 'room_0');
+
+            if(($possible_plant != null)||($possible_room != null))
+            {
+                game::$instance->addPending($this->player_id, "RefillMarket");
+            }
+            else
+            {
+                game::$instance->getFinalResults();
+                game::$instance->addPending($this->player_id, "EndOfGame");
+            }
         }
     }
 

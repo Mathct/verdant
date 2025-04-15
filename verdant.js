@@ -886,9 +886,7 @@ setupBoard: function () {
     this.addScorepad();
     this.addMarket();
 
-    if( this.gamedatas.end_game == "1") {
-        this.showFinalScores(this.gamedatas.scoring);
-    }
+
 
     this.addDecksToMarket();
     this.addPotsToMarket();
@@ -940,6 +938,13 @@ setupBoard: function () {
 
         this.addPotToHouse(pot);
     });
+
+    if( this.gamedatas.end_game == "1") {
+        this.showFinalScores(this.gamedatas.scoring);
+        this.showPointsScored(this.gamedatas.pots_scored);
+    }
+
+
 },
 
 
@@ -1486,7 +1491,7 @@ addPotToHouse: function(pot) {
     const pot_sprite = 3- pot.type;
 
     const housePotHTML = `
-        <div id="pot_${pot.id}" class="pot house-pot" style="background-position: -${pot_sprite}00% 0%; ">
+        <div id="pot_house_plant_${pot.location_arg}" class="pot house-pot" style="background-position: -${pot_sprite}00% 0%; ">
         </div>
     `;
 
@@ -2024,7 +2029,31 @@ showFinalScores: function(final_scores) {
 
 },
 
+showPointsScored: function( pots) {
+    Object.values(pots).forEach(pot => {
 
+
+        const potScorePotHTML = `
+            <div id="points_pot_${pot.id}" class="points" style="background-position: -${pot.type}00% 0%; "></div>
+        `;
+
+        const potElement = document.getElementById(`pot_house_plant_${pot.location_arg}`);
+
+        potElement.insertAdjacentHTML('beforeend', potScorePotHTML);
+
+        const plant_points = this.gamedatas.plant_cards[pot.location_arg].points
+
+        const plantScoreHTML = `
+            <div id="points_plant_${pot.location_arg}" class="house-points" style="background-position: -${plant_points}00% 0%; "></div>
+        `;
+        
+        
+        const cardElement = document.getElementById(`plant_${pot.location_arg}`);
+        cardElement.insertAdjacentHTML('beforeend', plantScoreHTML);
+
+
+    });
+},
 
 
 
@@ -3163,10 +3192,10 @@ notif_useThumbs: async function(args) {
 
 notif_showFinalScores: async function(args) {
 
-    this.showFinalScores(args.final_scores); 
+    this.showFinalScores(args.final_scores);
+    this.showPointsScored(args.pots_scored);
 },
 
-            //<div id="points_${pot.id}" class="points" style="background-position: -${pot.type}00% 0%; "></div>
 
 notif_score: async function( args ){
     
