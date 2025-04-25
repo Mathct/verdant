@@ -789,7 +789,7 @@ $this->_PLANT_CARDS = [
           "description" => clienttranslate('')
      ],
      58 => [
-          "name" => clienttranslate('Player Plant'),
+          "name" => clienttranslate('Prayer Plant'),
           "type" => 3,
           "lightning" => [2, 3],
           "verdancy" => 4,

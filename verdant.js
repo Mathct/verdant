@@ -2616,10 +2616,10 @@ getTooltipPlantContent : function(type, id) {
     `;
 
     const verdancy = plant_infos.verdancy;
-    html += `<br><span class='tooltip_desc'>${_("Verdancy needed: " + verdancy)}</span>`;
+    html += `<br><span class='tooltip_desc'>${_("Verdancy needed: ") + verdancy}</span>`;
 
     const award = plant_infos.points;
-    html += `<br><span class='tooltip_desc'>${_("Plant award: " + award)}</span>`;
+    html += `<br><span class='tooltip_desc'>${_("Plant award: ") + award}</span>`;
 
     const latin = plant_infos.latin_name;
     html += `<br><br><span class='tooltip_info'>${_(latin)}</span>`;
@@ -2670,7 +2670,7 @@ getTooltipPlantGoalContent : function( plant_goal_type, id) {
     html += `<span class='tooltip_title'>${_(plant_name)}</span><hr class="dark-green-line">`;
 
     const award = plant_goal_infos.points;
-    html += `<br><span class='tooltip_desc'>${_("Plant goal award: " + award)}</span>`;
+    html += `<br><span class='tooltip_desc'>${_("Plant goal award: ") + award}</span>`;
 
 
     const plant_goal_description = plant_goal_infos.description;
@@ -2722,7 +2722,7 @@ getTooltipItemGoalContent : function( item_goal_type, id) {
     html += `<span class='tooltip_title'>${_(item_name)}</span><hr class="dark-green-line">`;
 
     const award = item_goal_infos.points;
-    html += `<br><span class='tooltip_desc'>${_("Item goal award: " + award)}</span>`;
+    html += `<br><span class='tooltip_desc'>${_("Item goal award: ") + award}</span>`;
 
 
     const item_goal_description = item_goal_infos.description;
@@ -2774,7 +2774,7 @@ getTooltipRoomGoalContent : function( room_goal_type, id) {
     html += `<span class='tooltip_title'>${_(room_name)}</span><hr class="dark-green-line">`;
 
     const award = room_goal_infos.points;
-    html += `<br><span class='tooltip_desc'>${_("Room goal award: " + award)}</span>`;
+    html += `<br><span class='tooltip_desc'>${_("Room goal award: ") + award}</span>`;
 
 
     const room_goal_description = room_goal_infos.description;
