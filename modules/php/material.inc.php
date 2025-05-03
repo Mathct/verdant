@@ -492,7 +492,7 @@ $this->_PLANT_CARDS = [
           "description" => clienttranslate('')
      ],
      25 => [
-          "name" => clienttranslate('Back-Eyed susan Vine'),
+          "name" => clienttranslate('Black-Eyed Susan Vine'),
           "type" => 4,
           "lightning" => [1],
           "verdancy" => 7,
@@ -506,7 +506,7 @@ $this->_PLANT_CARDS = [
           "lightning" => [1, 2],
           "verdancy" => 5,
           "points" => 5,
-          "latin_name" => clienttranslate('Tradesciantia zebrina'),
+          "latin_name" => clienttranslate('Tradescantia zebrina'),
           "description" => clienttranslate('')
      ],
      27 => [
@@ -749,7 +749,7 @@ $this->_PLANT_CARDS = [
           "lightning" => [1, 2, 3],
           "verdancy" => 7,
           "points" => 7,
-          "latin_name" => clienttranslate('Sanseveiria trifasciata'),
+          "latin_name" => clienttranslate('Sansevieria trifasciata'),
           "description" => clienttranslate('')
      ],
      54 => [
@@ -758,7 +758,7 @@ $this->_PLANT_CARDS = [
           "lightning" => [2],
           "verdancy" => 4,
           "points" => 4,
-          "latin_name" => clienttranslate('Pilea peperonmioides'),
+          "latin_name" => clienttranslate('Pilea peperomioides'),
           "description" => clienttranslate('')
      ],
      55 => [
@@ -871,7 +871,7 @@ $this->_PLANT_CARDS = [
      ],
      67 => [
           "name" => clienttranslate('Spanish Moss'),
-          "type" => 3,
+          "type" => 4,
           "lightning" => [1, 2],
           "verdancy" => 0,
           "points" => 2,
@@ -880,7 +880,7 @@ $this->_PLANT_CARDS = [
      ],
      68 => [
           "name" => clienttranslate('Kangaroo Pocket'),
-          "type" => 3,
+          "type" => 4,
           "lightning" => [2, 3],
           "verdancy" => 0,
           "points" => 2,
@@ -889,7 +889,7 @@ $this->_PLANT_CARDS = [
      ],
      69 => [
           "name" => clienttranslate('Marimo'),
-          "type" => 3,
+          "type" => 5,
           "lightning" => [2, 3],
           "verdancy" => 0,
           "points" => 2,
@@ -898,7 +898,7 @@ $this->_PLANT_CARDS = [
      ],
      70 => [
           "name" => clienttranslate('Chia Sculpture'),
-          "type" => 3,
+          "type" => 5,
           "lightning" => [1, 2],
           "verdancy" => 0,
           "points" => 2,

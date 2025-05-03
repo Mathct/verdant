@@ -85,11 +85,7 @@ setup: function( gamedatas )
     this.plant_deck_counter = gamedatas.plants_deck;
     this.room_deck_counter = gamedatas.rooms_deck;
 
-    this.timer = 5;
-    //let timerPreference = this.getGameUserPreference(101);
-    if (this.getGameUserPreference(101) !== null && this.getGameUserPreference(101) !== undefined) {
-        this.timer = this.getGameUserPreference(101);
-    }
+    this.timer = this.safeGetPreference(101, 5);
  
 
     this.setupPlayersBoard();
@@ -776,6 +772,15 @@ onGameUserPreferenceChanged: function(pref_id, pref_value) {
         case 101: 
         this.timer = pref_value;
         break;
+    }
+},
+
+safeGetPreference: function(id, defaultValue) {
+    try {
+        const value = this.getGameUserPreference(id);
+        return (value !== null && value !== undefined) ? value : defaultValue;
+    } catch (e) {
+        return defaultValue;
     }
 },
 
@@ -2546,19 +2551,18 @@ getTooltipRoomContent : function(type, id) {
 
     
     const lightning_types = ["full-sun", "semi-shade", "shade"];
-    const directions = ["north", "east", "south", "west"];
+    const directions = [_('north'), _('east'), _('south'), _('west')];
+    const lightning_directions = ["north", "east", "south", "west"];
 
-    directions.forEach(direction => {
-        const lightning_value = room_infos.lightning[direction];
-        const lightning_class = lightning_types[lightning_value - 1];
+    lightning_directions.forEach((directionKey, i) => {
+    const lightning_value = room_infos.lightning[directionKey];
+    const lightning_class = lightning_types[lightning_value - 1];
 
     html += `
-                   
         <div class="lightning-container">
-            <span class='tooltip_desc'>${_(direction)}:</span>
+            <span class='tooltip_desc'>${directions[i]}:</span>
             <span class="lightning ${lightning_class}"></span>
-        </div>`
-        ;
+        </div>`;
     });
      
     html += '</div></div>'; // Fermeture des div   
