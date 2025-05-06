@@ -1271,6 +1271,14 @@ namespace {
         {
             return [];
         }
+
+        /**
+         * Get the player id of the player requesting the view.
+         */
+        protected function getCurrentPlayerId(): int
+        {
+            return 0;
+        }
     }
 
     abstract class GameState extends APP_Object
@@ -1704,6 +1712,14 @@ namespace {
         final protected function setAjaxMode(): void
         {
             //
+        }
+
+        /**
+         * Get the player id of the player requesting the action.
+         */
+        protected function getCurrentPlayerId(): int
+        {
+            return 0;
         }
     }
 
