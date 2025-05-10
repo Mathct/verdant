@@ -288,7 +288,7 @@ onUpdateActionButtons: function( stateName, args ) {
                         this.addActionButton( 'cancel', _("Cancel") ,'onOpButton', null, null, 'red' );
                     }
                     if(args.buttons[nb] == "pass") {
-                        this.addActionButton( 'pass', _("End Turn") ,'onOpButton', null, null, 'red' );
+                        this.addActionButton( 'pass', _("Store and End Turn") ,'onOpButton', null, null, 'red' );
                     }
                     if(args.buttons[nb] == "reset") {
                         this.addActionButton( 'reset', _("Reset selections") ,'onOpResetSelection', null, null, 'red' );
