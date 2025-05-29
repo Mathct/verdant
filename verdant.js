@@ -2004,34 +2004,37 @@ addNewPot: async function(pot) {
 },
 
 
+showFinalScores: async function(final_scores) {
+    dojo.removeClass('final_scorepad_id', 'hidden');
+    dojo.addClass('market_id', 'hidden');
 
-showFinalScores: function(final_scores) {
-    dojo.removeClass( 'final_scorepad_id', 'hidden');
-    dojo.addClass( 'market_id', 'hidden'); 
+    const scoreMapping = {
+        2: "completed_plants",
+        3: "extra_verdancy",
+        4: "pot_bonus",
+        5: "room_bonus",
+        6: "furniture_pets",
+        7: "plant_collector_bonus",
+        8: "room_collector_bonus",
+        9: "plant_goal",
+        10: "item_goal",
+        11: "room_goal",
+        12: "total"
+    };
 
-    Object.entries(final_scores).forEach(([playerId, scores]) => {
-        const scoreMapping = {
-            2: "completed_plants",
-            3: "extra_verdancy",
-            4: "pot_bonus",
-            5: "room_bonus",
-            6: "furniture_pets",
-            7: "plant_collector_bonus",
-            8: "room_collector_bonus",
-            9: "plant_goal",
-            10: "item_goal",
-            11: "room_goal",
-            12: "total"
-        };
+    const playerIds = Object.keys(final_scores);
+    const cellDelay = 200;
 
-        Object.entries(scoreMapping).forEach(([row, scoreType]) => {
+    // Ligne par ligne (ordre du tableau), puis joueur par joueur
+    for (const [row, scoreType] of Object.entries(scoreMapping)) {
+        for (const playerId of playerIds) {
             const cell = document.getElementById(`score_line_${row}_player_${playerId}`);
             if (cell) {
-                cell.innerText = scores[scoreType] ?? ""; // Laisser vide si la valeur est undefined
+                cell.innerText = final_scores[playerId][scoreType] ?? "";
             }
-        });
-    });
-
+            await new Promise(resolve => setTimeout(resolve, cellDelay));
+        }
+    }
 },
 
 showPointsScored: function( pots) {
@@ -3196,8 +3199,8 @@ notif_useThumbs: async function(args) {
 
 notif_showFinalScores: async function(args) {
 
-    this.showFinalScores(args.final_scores);
-    this.showPointsScored(args.pots_scored);
+    await this.showFinalScores(args.final_scores);
+    await this.showPointsScored(args.pots_scored);
 },
 
 

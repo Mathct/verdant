@@ -940,15 +940,6 @@ namespace Bga\GameFramework {
         }
 
         /**
-         * Returns the game name.
-         *
-         * NOTE: Do not modify, it's automatically replaced.
-         *
-         * @return string
-         */
-        abstract protected function getGameName();
-
-        /**
          * Return an associative array which associate each player with the previous player around the table.
          *
          * @return array<int, int>
