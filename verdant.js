@@ -71,8 +71,6 @@ setup: function( gamedatas )
     this.players_ordered = gamedatas.players_ordered;
 
 
-    this.possibleCards = [];
-
     this.thumb_counter = [];
 
     // multi
@@ -139,8 +137,8 @@ onEnteringState: function( stateName, args )
 
             if(this.isCurrentPlayerActive()) {
                 this.args.selectable.forEach(sid => {
+
                     if (sid.startsWith("grid_")) {
-                       console.log( this.args.card);
                         // possible positions are created 
                         this.addPossibleCardPositions(sid,this.args.card[0]);
                     }
@@ -148,15 +146,12 @@ onEnteringState: function( stateName, args )
                         if (sid.startsWith("icon_thumb_")) {
                             const element = document.getElementById(sid);
                             this.addSVGs(element,"selectable");
-                            
                         }
                         else {
                             dojo.addClass(sid,"selectable");
                         }
-                        
                         this.possibles.push(sid);
                     }
-                    
                 });
 
                 this.args.selected.forEach(sid => {
@@ -164,7 +159,6 @@ onEnteringState: function( stateName, args )
                     if (sid.startsWith("icon_thumb_")) {
                         const element = document.getElementById(sid);
                         this.addSVGs(element,"selected");
-                            
                         }
                         else {
                             dojo.addClass(sid,"selected");
@@ -172,6 +166,7 @@ onEnteringState: function( stateName, args )
                 });
 
                 if (this.args.selectablemulti) {
+
                     this.args.selectablemulti.forEach(sid => {
                         dojo.addClass(sid,"selectablemulti");
                         this.possibles.push(sid);  
@@ -179,20 +174,19 @@ onEnteringState: function( stateName, args )
                 }
 
                 if (this.args.selectablethumb) {
+
                     this.args.selectablethumb.forEach(sid => {
                         dojo.addClass(sid, "selectablethumb");
                         this.possibles.push(sid);
                     });
                 }
 
-                console.log( 'possibles', this.possibles);
                 // connections are made once all elements have been created
                 this.setupConnections(this.possibles);
 
                 if(args.args.titleyou != null) {
                     $('pagemaintitletext').innerHTML = this.format_string_recursive(_(args.args.titleyou).replace('${you}', this.divYou()).replace(/#opponent#/g,args.args.opponent).replace('#nb#',args.args.nb).replace('#nb2#',args.args.nb2).replace('#icon#',args.args.icon).replace('#icon2#',args.args.icon2), args.args);
                 }
-            
             }
             else{
                 if(args.args.title != null) {
@@ -202,11 +196,9 @@ onEnteringState: function( stateName, args )
             break;
 
 
-
         case 'playerTurnMulti':
             this.args = args.args;
-
-            
+           
             this.possibles = [];
     
             if(this.isCurrentPlayerActive())
@@ -218,10 +210,8 @@ onEnteringState: function( stateName, args )
                     this.addPossibleCardPositions(sid,this.args.card[player_id][0]);
                 });
 
-                console.log( 'possibles', this.possibles);
                 // connections are made once all elements have been created
                 this.setupConnections(this.possibles);
-    
             }
         break;    
     
@@ -238,8 +228,6 @@ onLeavingState: function( stateName ) {
     if( stateName != 'pending') {
         console.log( 'Leaving state: '+stateName );
     }    
-    
-
 
     dojo.query(".selectable").removeClass("selectable");
     dojo.query(".selected").removeClass("selected");
@@ -250,9 +238,8 @@ onLeavingState: function( stateName ) {
     dojo.query(".selectable_thumb_pannel").removeClass("selectable_thumb_pannel");
     this.removeSVGs();
 
-    // Récupérer tous les éléments ayant la classe 'possible_in_house'
+    // remove parent container of all possible_in_house elements
     const possibleElements = document.querySelectorAll('.possible_in_house');
-    // Supprimer le container parent
     possibleElements.forEach(element => {
         element.parentNode?.remove();
     });
@@ -276,7 +263,6 @@ onUpdateActionButtons: function( stateName, args ) {
     if( stateName != 'pending') {
         console.log( 'onUpdateActionButtons: '+stateName, args );
     } 
-   
               
     if( this.isCurrentPlayerActive() ) {            
         switch( stateName )
@@ -333,21 +319,25 @@ onUpdateActionButtons: function( stateName, args ) {
                         dojo.addClass( 'validatemulti_handtrowel', 'disabled');
                                 
                     }
+
                     if(args.buttons[nb] == "validate_verdancy")
                     {
                         this.addActionButton( 'validate_verdancy', _("Add verdancy") ,'onOpValidate_Thumb', null, null, 'blue' );
                         dojo.addClass( 'validate_verdancy', 'disabled');
                     }
+
                     if(args.buttons[nb] == "validate_cards")
                     {
                         this.addActionButton( 'validate_cards', _("Reset cards") ,'onOpValidate_Thumb', null, null, 'blue' );
                         dojo.addClass( 'validate_cards', 'disabled');
-                    }                    
+                    }   
+
                     if(args.buttons[nb] == "validate_tokens")
                     {
                         this.addActionButton( 'validate_tokens', _("Reset tokens") ,'onOpValidate_Thumb', null, null, 'blue' );
                         dojo.addClass( 'validate_tokens', 'disabled');
                     }
+
                     if(args.buttons[nb] == "validate_mixed")
                     {
                         this.addActionButton( 'validate_mixed', _("Mixed selection") ,'onOpValidate_Thumb', null, null, 'blue' );
@@ -400,20 +390,19 @@ format_string_recursive : function(log, args) {
     return this.inherited(arguments);
 },
 
-
 removeSVGs: function() {
     // Sélectionner tous les éléments <svg> dans le document
     const svgs = document.querySelectorAll('svg');
    
     // Parcourir chaque <svg>
     svgs.forEach(svg => {
-    // Vérifier si le <svg> contient un <path> avec la classe 'path_selectable' ou 'path_selected'
-    const path1 = svg.querySelector('path.path_selectable');
-    const path2 = svg.querySelector('path.path_selected');
-    if (path1 || path2) {
-    // Supprimer le <svg> du DOM
-    svg.remove();
-    }
+        // Vérifier si le <svg> contient un <path> avec la classe 'path_selectable' ou 'path_selected'
+        const path1 = svg.querySelector('path.path_selectable');
+        const path2 = svg.querySelector('path.path_selected');
+        if (path1 || path2) {
+            // Supprimer le <svg> du DOM
+            svg.remove();
+        }
    
     });
 },
@@ -428,25 +417,25 @@ addSVGs: function(image, type) {
     /* ICI, en rouge, c’est le PATH que l’on retrouve en bas de fichier SVG*/
     path.setAttribute("d", "m 105.0034,174.96362 c -6.770681,-0.80075 -15.634114,-2.57047 -19.69652,-3.9327 -4.860669,-1.62992 -10.921923,-2.72351 -17.726866,-3.19833 -8.247341,-0.57549 -11.350141,-1.23671 -15.327288,-3.2663 -12.370853,-6.313 -20.395061,-22.23693 -20.395061,-40.47367 0,-21.92022 10.40745,-36.209191 27.28004,-37.454281 3.289135,-0.24272 6.969321,-0.641673 8.178192,-0.886572 2.819798,-0.571248 5.188247,-5.146885 5.188247,-10.023232 0,-6.079248 3.569251,-18.344131 7.569827,-26.011915 12.023957,-23.045956 38.422549,-32.241214 61.032479,-21.259064 7.05219,3.425408 15.65847,11.569753 18.75611,17.749405 5.12223,10.218577 7.13473,24.804033 5.23987,37.975325 -1.11434,7.745775 -1.07004,8.983113 0.4248,11.863151 3.75653,7.237643 3.46696,17.915383 -1.06659,39.331073 -1.82146,8.60419 -6.81191,24.15861 -8.65729,26.9832 -2.90134,4.44101 -9.25193,9.47851 -14.34044,11.37538 -7.14783,2.66451 -20.51044,3.11476 -36.45951,1.22853 z");
     
-     if(type == "selectable")
-     {
-     // Ajouter la classe 'selectable' au div d'image
-     image.classList.add('selectable_thumb_pannel');
-     // Ajouter la classe 'selectable' au path (contour jaune)
-     path.setAttribute("class", "path_selectable");
-     }
-     if(type == "selected")
-     {
-     // Ajouter la classe 'selected' au div d'image
-     //image.classList.add('selected_thumb_pannel');
-     // Ajouter la classe 'selectable' au path (contour pointillé jaune)
-     path.setAttribute("class", "path_selected");
-     }
-     // Ajouter le path au SVG
-     svg.appendChild(path);
+    if(type == "selectable")
+    {
+        // Ajouter la classe 'selectable' au div d'image
+        image.classList.add('selectable_thumb_pannel');
+        // Ajouter la classe 'selectable' au path (contour jaune)
+        path.setAttribute("class", "path_selectable");
+    }
+    if(type == "selected")
+    {
+        // Ajouter la classe 'selected' au div d'image
+        //image.classList.add('selected_thumb_pannel');
+        // Ajouter la classe 'selectable' au path (contour pointillé jaune)
+        path.setAttribute("class", "path_selected");
+    }
+    // Ajouter le path au SVG
+    svg.appendChild(path);
     
-     // Ajouter le SVG en tant qu'élément enfant du div d'image
-     image.appendChild(svg);
+    // Ajouter le SVG en tant qu'élément enfant du div d'image
+    image.appendChild(svg);
 },
 
 
@@ -467,13 +456,10 @@ setupConnections: function(selectables) {
     selectables.forEach(elt_id => {
         const element = document.getElementById(elt_id);
 
-        //console.log( 'con_elt', element);
-
         const resourceClickHandler = (evt) => this.onSelect(evt);
         element.addEventListener('click', resourceClickHandler);
         this.connections.push({ element, event: 'click', handler: resourceClickHandler });
     });
-
 },
 
 
@@ -515,18 +501,14 @@ stopEvent:function (evt) {
 
 onSelect: function(evt) {        	 
     // Preventing default browser reaction
-  
     this.stopEvent( evt );
 
     if(this.isCurrentPlayerActive() && !this._helpMode) {
         if((evt.currentTarget.classList.contains('selectable')) || (evt.currentTarget.classList.contains('selectable_thumb_pannel'))) {
         
-            console.log( 'actSelect', evt.currentTarget.id);
             this.bgaPerformAction('actSelect', { arg1: evt.currentTarget.id });
         }
         else if (evt.currentTarget.classList.contains('selectablethumb')) {
-            console.log('currentTarget', evt.currentTarget.id);
-            
             if (!evt.currentTarget.closest('[id^="market_cell_"]')) {
                 document.querySelectorAll('.selectedthumb').forEach(el => {
                     el.classList.replace('selectedthumb', 'selectablethumb');
@@ -653,7 +635,7 @@ onSelect: function(evt) {
             var boutonvalidate = document.getElementById('validatemulti_handtrowel');
             if (boutonvalidate !== null)
             {
-                if(nombreElements>=1 && nombreElements<=3)
+                if(nombreElements >= 1 && nombreElements <= 3)
                 {
                     dojo.removeClass( 'validatemulti_handtrowel', 'disabled');
                 }
@@ -681,7 +663,7 @@ onSelect: function(evt) {
             var boutonvalidate = document.getElementById('validatemulti_handtrowel');
             if (boutonvalidate !== null)
             {
-                if(nombreElements>=1 && nombreElements<=3)
+                if(nombreElements >= 1 && nombreElements <= 3)
                 {
                     dojo.removeClass( 'validatemulti_handtrowel', 'disabled');
                 }
@@ -691,12 +673,8 @@ onSelect: function(evt) {
                 }
             }
             }, 50);
-
-            
         }
     }
-         
-
 },
 
 
@@ -714,31 +692,25 @@ onOpValidatemulti_Handtrowel: function(evt) {
     // Preventing default browser reaction
     this.stopEvent( evt );
 
-    
+    const elementsAvecClasse = document.querySelectorAll(".selectedmulti");
 
-     // Sélectionnez tous les éléments avec la classe spécifiée
-     const elementsAvecClasse = document.querySelectorAll(".selectedmulti");
+    // Convertissez la NodeList en un tableau et extrayez les IDs
+    const ids = Array.from(elementsAvecClasse, element => element.id);
 
-     // Convertissez la NodeList en un tableau et extrayez les IDs
-     const ids = Array.from(elementsAvecClasse, element => element.id);
+    let result = "";
 
-     let result = "";
-
-     ids.forEach(function(id) {
+    ids.forEach(function(id) {
         const parts = id.split("_"); // Split l'ID avec '_'
         result += (result ? "_" : "") + parts[1]; // Ajoute _ sauf pour le premier élément
     
     });
-
   
     this.bgaPerformAction('actValidatemultiHandtrowel', { arg1: result});
-    
 },
 
 onOpValidate_Thumb: function(evt) {
     // Preventing default browser reaction
     this.stopEvent( evt );
-
 
     let action = evt.target.id;
 
@@ -747,14 +719,12 @@ onOpValidate_Thumb: function(evt) {
         .map(el => el.id)  // Récupère l'id de chaque élément
         .join(';');  
 
-    // renvoie l'action déclenchée et la liste des id sélectionnés, séparés par ';'.
     this.bgaPerformAction('actValidateThumb', { arg1: `${action};${result}`});
 },
 
 onOpResetSelection: function(evt) {
     // Preventing default browser reaction
     this.stopEvent( evt );
-
     
     document.querySelectorAll('.selectedthumb').forEach(el => {
         el.classList.replace('selectedthumb', 'selectablethumb');
@@ -764,7 +734,6 @@ onOpResetSelection: function(evt) {
     dojo.addClass('validate_tokens', 'disabled');
     dojo.addClass('validate_mixed', 'disabled');
     dojo.addClass('validate_verdancy', 'disabled');
-
 },
 
 onGameUserPreferenceChanged: function(pref_id, pref_value) {
@@ -803,9 +772,7 @@ setupPlayersBoard: function() {
 
         const aiBoard = document.getElementById("ai_board_" + player.id);
 
-
         // reserve
-
         const reserveGroup = `
             <div class="icon-group">
                 <div class="icon reserve" id="icon_reserve_${player.id}"></div>
@@ -818,7 +785,6 @@ setupPlayersBoard: function() {
 
 
         // green thumbs
-
         const thumbGroup = `
             <div class="icon-group">
                 <div class="icon" id="icon_thumb_${player.id}"></div>
@@ -835,8 +801,7 @@ setupPlayersBoard: function() {
         html = "<div class='tooltip_content'><span class='tooltip_desc'>"+_('Thumbs collected')+"</span></div>";
         this.addCustomTooltip( `icon_thumb_${player.id}`, html);
 
-        if( player.id ==this.player_id) {
-                           
+        if( player.id == this.player_id) {
             aiBoard.insertAdjacentHTML('beforeend', `
                 <div id="help-mode-switch">
                     <input type="checkbox" class="checkbox" id="help-mode-chk" />
@@ -858,7 +823,6 @@ setupPlayersBoard: function() {
                 this.toggleHelpMode(helpModeCheckbox.checked);
             });
             this.addTooltip("help-mode-switch", "", _("Toggle Tooltips on Mobile mode."));
-
         }
 
     });
@@ -880,28 +844,20 @@ setupBoard: function () {
     const gameBoard = `
         <div id="resized_id">
             <div id="board_id"></div>
-        </div>   
-    `
+        </div>`
     
     const gamePlayArea = document.getElementById("game_play_area");
     gamePlayArea.insertAdjacentHTML("beforeend", gameBoard);
 
-
-
     this.addScorepad();
     this.addMarket();
-
-
 
     this.addDecksToMarket();
     this.addPotsToMarket();
 
-
-
     Object.values(this.players_ordered).forEach((player) => {
         this.addHouse(player);
     });
-
 
     Object.values(this.gamedatas.rooms).forEach((room) => {
         if(room.location == 'market') {
@@ -932,7 +888,6 @@ setupBoard: function () {
         }
         else {
             this.addTileToHouse(tile);
-            
         }
     });
 
@@ -948,8 +903,6 @@ setupBoard: function () {
         this.showFinalScores(this.gamedatas.scoring);
         this.showPointsScored(this.gamedatas.pots_scored);
     }
-
-
 },
 
 
@@ -1018,8 +971,6 @@ addScorepad: function() {
         container.appendChild(newImage);
         this.addTooltipHtml('scorepad_avatar_'+playerId, this.gamedatas.players[playerId].name, '' );
     }
-
-
 },
 
 
@@ -1077,7 +1028,6 @@ generateMarketGrid: function() {
             `;
         }
     }
-
 
     return gridCellsHTML;
 },
@@ -1224,8 +1174,6 @@ addGoalCards:function() {
 
     this.addCustomTooltip(item_goal_id, this.getTooltipItemGoalContent(item_goal_type, item_goal_id));
 
-
-
     // Création de la carte Plant Goal
     const room_goal_type = this.gamedatas.room_goal; // vert foncé
 
@@ -1249,14 +1197,12 @@ addGoalCards:function() {
     }
 
     const room_goal_id = `room_goal_${room_goal_type}`;
-    const roomGoalHTML = `<div id="${room_goal_id}" class="goal" style="background-position: -${room_goal_x}00% -${room_goal_y}00%;"></div>
-    `;
+    const roomGoalHTML = `<div id="${room_goal_id}" class="goal" style="background-position: -${room_goal_x}00% -${room_goal_y}00%;"></div>`;
 
     goalContainer.insertAdjacentHTML('beforeend', roomGoalHTML)
  
     this.addCustomTooltip(room_goal_id, this.getTooltipRoomGoalContent(room_goal_type, room_goal_id));
 },
-
 
 
 
@@ -1482,11 +1428,7 @@ addTileToHouse: function(tile) {
 
     container.insertAdjacentHTML("beforeend", tileHTML);
 
-
-    //if(room_type === 99) {
-        this.addCustomTooltip(`tile_${tile.id}`, this.getTooltipTileContent(tile.type, tile.id));
-    //}
-
+    this.addCustomTooltip(`tile_${tile.id}`, this.getTooltipTileContent(tile.type, tile.id));
 
 },
 
@@ -1567,7 +1509,6 @@ resetCard: async function(card) {
     const targetElement = document.getElementById(`${card.genre}_market_deck`);
     // Lancer l'animation de déplacement vers le deck
     await this.slide(newNode, targetElement, { destroy: true });
-    //slotContainer.remove();
 
 },
 
@@ -1631,10 +1572,7 @@ drawCard: async function(card) { // checked
     const gridContainer = document.getElementById(`${card.genre}_market_deck`);
     gridContainer.appendChild(newNode);
 
-
-
     const cardElement = document.getElementById(`${card.genre}_${card.type}`);
-
     
     const row = card.genre == 'plant' ? 2 : 4;
     const col = coord + 1;
@@ -1673,10 +1611,8 @@ drawTile: async function(tile) { // checked
     const gridContainer = document.getElementById(`bag_market`);
     gridContainer.appendChild(tileElement);
 
-
     const col = coord + 1;
     const targetElement = document.getElementById(`market_cell_3${col}`);
-
 
     await this.slide(tileElement, targetElement);
 
@@ -1759,8 +1695,6 @@ animatePotAppearance: function(plant_type, pot_value) { //checked
             <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear" style="background-position: -${pot_sprite}00% 0%;">
             </div>
         `;
-
-        
 
         cardElement.insertAdjacentHTML('beforeend', housePotHTML);
 
@@ -2055,10 +1989,8 @@ showPointsScored: function( pots) {
             <div id="points_plant_${pot.location_arg}" class="house-points" style="background-position: -${plant_points}00% 0%; "></div>
         `;
         
-        
         const cardElement = document.getElementById(`plant_${pot.location_arg}`);
         cardElement.insertAdjacentHTML('beforeend', plantScoreHTML);
-
 
     });
 },
@@ -2866,8 +2798,6 @@ notif_moveCardToHouse: async function(args) {
 
 
     if( player_id == this.player_id ) {
-
-
         const possibleElements = document.querySelectorAll('.possible_in_house');
         possibleElements.forEach(element => {
             element.parentNode?.remove();
@@ -2876,7 +2806,6 @@ notif_moveCardToHouse: async function(args) {
 
 
     if( args.card_before.location_arg != 99) {
-        
         // dynamic container is added
         const slotHTML = `
             <div id="slot_${house_location}_${player_id}" class="grid-slot" 
@@ -2896,9 +2825,6 @@ notif_moveCardToHouse: async function(args) {
         this.addCardToHouse(args.card_after, args.card_before.genre);
     }
 },
-
-
-
 
 
 
@@ -2946,6 +2872,7 @@ notif_moveTileToReserve: async function(args) {
 notif_addGreenThumbs: async function(args) {
     this.thumb_counter[args.player_id].incValue(args.nb_thumbs);
 },
+
 
 notif_setGreenThumbs: async function(args) {
     this.thumb_counter[args.player_id].setValue(args.nb_thumbs);
@@ -3039,9 +2966,6 @@ notif_addVerdancySolo: async function(args) {
 
 
 
-
-
-
 notif_refillMarket: async function(args) {
     // Ajouter la vignette sur la carte
     await this.addThumbOnCard(args.card_thumb);
@@ -3124,9 +3048,6 @@ notif_refillMarketSolo: async function(args) {
 
     
 },
-
-
-
 
 
 notif_resetTiles: async function(args) {
