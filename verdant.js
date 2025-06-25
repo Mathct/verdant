@@ -1649,48 +1649,78 @@ addThumbOnCard: function(card, value = 1) {
 
 
 animateAndRemoveToken: function(token_css) {
+    const tokenElement = document.getElementById(token_css);
+    if (!tokenElement) {
+        return Promise.resolve(); // Toujours retourner une Promise
+    }
+
+    if (this.instantaneousMode) {
+        tokenElement.remove();
+        return Promise.resolve(); // Important pour compatibilité avec `await`
+    }
 
     return new Promise((resolve) => {
-        const tokenElement = document.getElementById(token_css);
-        if (!tokenElement) {
-            resolve(); // Si l'élément n'existe pas, on termine la promesse
-            return;
-        }
-
-        // Ajouter l'animation CSS
         tokenElement.classList.add("sprite-disappear");
 
         tokenElement.addEventListener("animationend", () => {
             tokenElement.remove();
-            resolve(); // La promesse est terminée
-        }, { once: true }); // `once: true` pour éviter plusieurs déclenchements
+            resolve();
+        }, { once: true });
     });
 },
 
 animateAndRemoveVerdancy: function(plant_type) { //checked
+    const verdancyElement = document.getElementById(`verdancy_plant_${plant_type}`);
+    if (!verdancyElement) {
+        return Promise.resolve(); // Toujours retourner une Promise
+    }
+
+    if( this.instantaneousMode ) {
+        verdancyElement.remove();
+        return Promise.resolve(); // Important pour compatibilité avec `await`
+    }
+    else {
+        return new Promise((resolve) => {
+            // Ajouter l'animation CSS
+            verdancyElement.classList.add("sprite-disappear");
+
+            verdancyElement.addEventListener("animationend", () => {
+                verdancyElement.remove();
+                resolve(); // La promesse est terminée
+            }, { once: true }); // `once: true` pour éviter plusieurs déclenchements
+        });
+    }
+},
+
+animatePotAppearance: function(plant_type, pot_value) {
+    if (this.instantaneousMode) {
+        const cardElement = document.getElementById(`plant_${plant_type}`);
+        if (!cardElement) {
+            return Promise.resolve(); // Rien à faire si l'élément n'existe pas
+        }
+
+        const pot_sprite = 3 - pot_value;
+        const housePotHTML = `
+            <div id="pot_house_plant_${plant_type}" class="pot house-pot" style="background-position: -${pot_sprite}00% 0%;">
+            </div>
+        `;
+
+        cardElement.insertAdjacentHTML('beforeend', housePotHTML);
+
+        // Ajuster le compteur sans animation
+        this.pot_counter[pot_sprite].incValue(-1);
+
+        return Promise.resolve();
+    }
 
     return new Promise((resolve) => {
-        const verdancyElement = document.getElementById(`verdancy_plant_${plant_type}`);
-        if (!verdancyElement) {
-            resolve(); // Si l'élément n'existe pas, on termine la promesse
+        const cardElement = document.getElementById(`plant_${plant_type}`);
+        if (!cardElement) {
+            resolve();
             return;
         }
 
-        // Ajouter l'animation CSS
-        verdancyElement.classList.add("sprite-disappear");
-
-        verdancyElement.addEventListener("animationend", () => {
-            verdancyElement.remove();
-            resolve(); // La promesse est terminée
-        }, { once: true }); // `once: true` pour éviter plusieurs déclenchements
-    });
-},
-
-animatePotAppearance: function(plant_type, pot_value) { //checked
-    return new Promise((resolve) => {
-        const cardElement = document.getElementById(`plant_${plant_type}`);
         const pot_sprite = 3 - pot_value;
-
         const housePotHTML = `
             <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear" style="background-position: -${pot_sprite}00% 0%;">
             </div>
@@ -1700,22 +1730,53 @@ animatePotAppearance: function(plant_type, pot_value) { //checked
 
         const potElement = document.getElementById(`pot_house_plant_${plant_type}`);
 
-        // Attendre la fin de l'animation
         potElement.addEventListener("animationend", () => {
-            potElement.classList.remove("sprite-appear"); // Retirer la classe pour éviter de rejouer l'animation
-            
-            // adjust market counter
+            potElement.classList.remove("sprite-appear");
             this.pot_counter[pot_sprite].incValue(-1);
             resolve();
         }, { once: true });
     });
 },
 
-animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checked
+animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) {
+    if (this.instantaneousMode) {
+        const cardElement = document.getElementById(`plant_${plant_type}`);
+        if (!cardElement) {
+            return Promise.resolve(); // Rien à faire si l'élément n'existe pas
+        }
+
+        const pot_sprite = 3 - pot_value;
+        const housePotHTML = `
+            <div id="pot_house_plant_${plant_type}" class="pot house-pot" style="background-position: -${pot_sprite}00% 0%;">
+            </div>
+        `;
+
+        cardElement.insertAdjacentHTML('beforeend', housePotHTML);
+
+        const oldPotElement = document.getElementById(pot_origin)?.firstElementChild;
+        if (pot_origin === 'market_cell_15' && oldPotElement) {
+            // En instantané, on fait disparaître immédiatement
+            oldPotElement.remove();
+        } else {
+            if (pot_origin === 'pot_deck_0') {
+                this.pot_deck_counter[0].incValue(-1);
+            } else {
+                const pot_sprite_from_origin = pot_origin.slice(-1);
+                this.pot_discard_counter[pot_sprite_from_origin].incValue(-1);
+            }
+        }
+
+        return Promise.resolve();
+    }
+
     return new Promise((resolve) => {
         const cardElement = document.getElementById(`plant_${plant_type}`);
-        const pot_sprite = 3 - pot_value;
+        if (!cardElement) {
+            resolve();
+            return;
+        }
 
+        const pot_sprite = 3 - pot_value;
         const housePotHTML = `
             <div id="pot_house_plant_${plant_type}" class="pot house-pot sprite-appear" style="background-position: -${pot_sprite}00% 0%;">
             </div>
@@ -1723,29 +1784,24 @@ animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checke
 
         cardElement.insertAdjacentHTML('beforeend', housePotHTML);
 
-        const oldPotElement = document.getElementById(pot_origin).firstElementChild;
-        if( pot_origin == 'market_cell_15')  {
+        const oldPotElement = document.getElementById(pot_origin)?.firstElementChild;
+        if (pot_origin === 'market_cell_15' && oldPotElement) {
             oldPotElement.classList.add("sprite-disappear");
         }
 
-
         const potElement = document.getElementById(`pot_house_plant_${plant_type}`);
 
-        // Attendre la fin de l'animation
         potElement.addEventListener("animationend", () => {
-            potElement.classList.remove("sprite-appear"); // Retirer la classe pour éviter de rejouer l'animation
-            
-            // pot in market place 4 is removed or lowest discard counter is updated
-            if( pot_origin == 'market_cell_15')  {
+            potElement.classList.remove("sprite-appear");
+
+            if (pot_origin === 'market_cell_15' && oldPotElement) {
                 oldPotElement.remove();
-            }
-            else {
-                if( pot_origin == 'pot_deck_0') { // round13
+            } else {
+                if (pot_origin === 'pot_deck_0') {
                     this.pot_deck_counter[0].incValue(-1);
-                }
-                else {
-                    const pot_sprite = pot_origin.slice(-1);
-                    this.pot_discard_counter[pot_sprite].incValue(-1);
+                } else {
+                    const pot_sprite_from_origin = pot_origin.slice(-1);
+                    this.pot_discard_counter[pot_sprite_from_origin].incValue(-1);
                 }
             }
             resolve();
@@ -1754,14 +1810,23 @@ animatePotAppearanceSolo: function(plant_type, pot_value, pot_origin) { //checke
 },
 
 
-discardTile: function(tile) {
-    return new Promise((resolve) => {
-        const tileElement = document.getElementById(`tile_${tile.id}`);
-        if (!tileElement) {
-            resolve(); // Si l'élément n'existe pas, on évite un plantage
-            return;
+animateDiscardTile: function(tile) {
+    const tileElement = document.getElementById(`tile_${tile.id}`);
+    if (!tileElement) {
+        return Promise.resolve(); // Rien à faire si la tuile est déjà absente
+    }
+
+    if (this.instantaneousMode) {
+        if (tile.location_arg === 99) {
+            const parentElement = tileElement.parentElement;
+            parentElement.classList.add("tooltipable");
         }
 
+        tileElement.remove();
+        return Promise.resolve(); // Important pour garder une API cohérente
+    }
+
+    return new Promise((resolve) => {
         tileElement.classList.remove("selectable", "selected");
         tileElement.classList.add("sprite-disappear");
 
@@ -1770,14 +1835,12 @@ discardTile: function(tile) {
             parentElement.classList.add("tooltipable");
         }
 
-        // Attendre la fin de l'animation avant de supprimer l'élément
         tileElement.addEventListener("animationend", () => {
             tileElement.remove();
             resolve(); // La promesse est résolue après la suppression
-        }, { once: true }); // `once: true` pour éviter plusieurs déclenchements
+        }, { once: true });
     });
 },
-
 
 
 
@@ -1849,7 +1912,7 @@ removeThumbOnCard: async function (card) {
 
 removeFourthColumn: async function () {
     const elements = ['market_cell_15', 'market_cell_25', 'market_cell_35', 'market_cell_45'];
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    
 
     for (let i = 0; i < elements.length; i++) {
         const marketCell = document.getElementById(elements[i]);
@@ -1876,12 +1939,12 @@ removeFourthColumn: async function () {
 
             // Animations et suppression du token (enfant)
             await this.animateAndRemoveToken(childId); 
-            await delay(200); // Petit délai pour éviter un retrait trop rapide
+            await this.wait(200); // Petit délai pour éviter un retrait trop rapide
         }
     }
 },
 
-moveAllRight: async function() {
+moveAllRightOld: async function() {
     const cellsToMove = [
         'market_cell_14', 'market_cell_24', 'market_cell_34', 'market_cell_44',
         'market_cell_13', 'market_cell_23', 'market_cell_33', 'market_cell_43',
@@ -1910,6 +1973,32 @@ moveAllRight: async function() {
     }
 
     // Attendre que toutes les animations soient terminées
+    await Promise.all(movePromises);
+},
+
+moveAllRight: async function() {
+    const cellsToMove = [
+        'market_cell_14', 'market_cell_24', 'market_cell_34', 'market_cell_44',
+        'market_cell_13', 'market_cell_23', 'market_cell_33', 'market_cell_43',
+        'market_cell_12', 'market_cell_22', 'market_cell_32', 'market_cell_42'
+    ];
+
+    const movePromises = cellsToMove.map(async (cellId, i) => {
+        await this.wait(i * 50);
+        const currentCell = document.getElementById(cellId);
+        if (!currentCell) return;
+
+        const card = currentCell.firstElementChild;
+        if (!card) return;
+
+        const newCellValue = parseInt(cellId.split('_')[2]) + 1;
+        const nextCellId = `market_cell_${newCellValue}`;
+        const nextCell = document.getElementById(nextCellId);
+        if (!nextCell) return;
+
+        await this.slide(card, nextCell);
+    });
+
     await Promise.all(movePromises);
 },
 
@@ -1957,7 +2046,6 @@ showFinalScores: async function(final_scores) {
     };
 
     const playerIds = Object.keys(final_scores);
-    const cellDelay = 200;
 
     // Ligne par ligne (ordre du tableau), puis joueur par joueur
     for (const [row, scoreType] of Object.entries(scoreMapping)) {
@@ -1966,7 +2054,7 @@ showFinalScores: async function(final_scores) {
             if (cell) {
                 cell.innerText = final_scores[playerId][scoreType] ?? "";
             }
-            await new Promise(resolve => setTimeout(resolve, cellDelay));
+            await this.wait(200);
         }
     }
 },
@@ -2724,35 +2812,7 @@ getTooltipRoomGoalContent : function( room_goal_type, id) {
     return html;          
 },
 
-onScreenWidthChange: function () {
-    this.updateLayout();
-},
 
-updateLayout: function () {
-/*    var gameWidth = TABLE_WIDTH;
-    var gameHeight = TABLE_HEIGHT;
-
-    var horizontalScale = document.getElementById('game_play_area').clientWidth / gameWidth;
-    var verticalScale = (window.innerHeight - 0) / gameHeight;
-
-    var scale = Math.min(1, horizontalScale, verticalScale);
-
-    var resized_div = document.getElementById('resized_id');
-    var board = document.getElementById('board_id');
-
-    if (!resized_div || !board) {
-        console.warn('updateLayout aborted: missing resized_id or board_id');
-        return;
-    }
-    else {
-        console.log('updateLayout');
-    }
-
-    var play_area_height = dojo.marginBox(board).h;
-
-    resized_div.style.transform = scale === 1 ? '' : "scale(" + scale + ")";
-    dojo.style(resized_div, 'height', (play_area_height * scale) + 'px');*/
-},
 
 ///////////////////////////////////////////////////////////////////////////////// 
 //       _   _       _   _  __ _           _   _                 
@@ -2845,9 +2905,7 @@ notif_moveTileToHouse: async function(args) {
 
 
 notif_discardTile: async function(args) {
-
-    // tile animates and disappears
-    await this.discardTile(args.tile);
+    await this.animateDiscardTile(args.tile);
 },
 
 
@@ -2972,143 +3030,101 @@ notif_refillMarket: async function(args) {
 
     // Lancer les deux animations simultanément avec un petit délai
     await Promise.all([
-        this.flipAndDrawCard(args.card_pick), new Promise(resolve => setTimeout(resolve, 100))
-        .then(() => this.drawTile(args.tile_pick)) // délai de 100ms avant drawTile
+        this.flipAndDrawCard(args.card_pick),
+        this.wait(100).then(() => this.drawTile(args.tile_pick))
     ]);
 },
 
 
 
-notif_refillMarketSolo: async function(args) {
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+otif_refillMarketSolo: async function(args) {
 
     // on place un pouce vert en face card_thumb et genre
     await this.addThumbOnCard(args.card_thumb);
 
-
     // on déplace les pouces de la 4ème colonne vers la gauche et on supprime si >=3
     await this.moveBackThumbs();
 
-        // Attendre un petit instant pour être sûr que la colonne est bien vide
-    await delay(500);
+    // Attendre un petit instant pour être sûr que la colonne est bien vide
+    await this.wait(500);
 
-    if (args.thumbs_removed.length > 0) {
-        const thumbRemovePromises = args.thumbs_removed.map((card, index) => {
-            return new Promise(resolve => {
-                setTimeout(async () => {
-                    await this.removeThumbOnCard(card);
-                    resolve();
-                }, index * 200); // 200ms de décalage entre chaque suppression
-            });
-        });
+    // Supprimer les pouces avec décalage
+    const thumbRemovePromises = args.thumbs_removed.map(async (card, index) => {
+        await this.wait(index * 200);
+        await this.removeThumbOnCard(card);
+    });
 
-        await Promise.all(thumbRemovePromises);
-    }
+    await Promise.all(thumbRemovePromises);
 
-    //on supprime les cartes, item et pot sur la colonne 4
+    // on supprime les cartes, item et pot sur la colonne 4
     await this.removeFourthColumn();
 
     // on décale tout d'une case vers la droite
     await this.moveAllRight();
 
-
-
-    // Lancer l'animation du pot avec un petit délai avant de commencer les cartes et tuiles
-    const potPromise = new Promise(resolve => {
-        setTimeout(async () => {
-            await this.addNewPot(args.new_pot);
-            resolve();
-        }, 200); // Légère attente avant l'animation du pot
-    });
+    // Animation du pot avec délai
+    const potPromise = (async () => {
+        await this.wait(200);
+        await this.addNewPot(args.new_pot);
+    })();
 
     // Animer les cartes en parallèle avec un décalage progressif
-    const cardPromises = Object.entries(args.cards_pick).map(([index, card]) => {
-        return new Promise(resolve => {
-            setTimeout(async () => {
-                //await this.flipAndDrawCard(card);
-                await this.drawCard(card);
-                resolve();
-            }, index * 300); // Décalage de 300ms entre chaque carte
-        });
+    const cardPromises = Object.entries(args.cards_pick).map(async ([index, card]) => {
+        await this.wait(index * 300);
+        await this.drawCard(card);
     });
 
     // Animer les tuiles en parallèle avec un décalage progressif
-    const tilePromises = Object.entries(args.tiles_pick).map(([index, tile]) => {
-        return new Promise(resolve => {
-            setTimeout(async () => {
-                console.log('tile110 ', tile.id);
-                await this.drawTile(tile);
-                resolve();
-            }, index * 300); // Décalage de 300ms entre chaque tuile
-        });
+    const tilePromises = Object.entries(args.tiles_pick).map(async ([index, tile]) => {
+        await this.wait(index * 300);
+        await this.drawTile(tile);
     });
 
     // Attendre que toutes les animations soient terminées
     await Promise.all([potPromise, ...cardPromises, ...tilePromises]);
-
-    
 },
 
 
 notif_resetTiles: async function(args) {
-    // Supprimer les anciennes tuiles en parallèle avec un décalage progressif
-    const discardPromises = args.old_tiles.map((tile, index) => {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                this.discardTile(tile).then(resolve); // Attendre la fin de l'animation CSS
-            }, index * 100); // Décalage de 100ms entre chaque suppression
-        });
-    });
-
-    // **Attendre que toutes les tuiles aient été supprimées avant d'ajouter les nouvelles**
+    // Supprimer les anciennes tuiles avec un décalage progressif
+    const discardPromises = args.old_tiles.map((tile, index) =>
+        this.wait(index * 100).then(() => this.animateDiscardTile(tile))
+    );
     await Promise.all(discardPromises);
 
-    // Ajouter un petit délai supplémentaire pour éviter toute collision résiduelle
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Petit délai pour éviter toute collision résiduelle
+    await this.wait(200);
 
-    // Ajouter les nouvelles tuiles en parallèle avec un décalage progressif
-    const drawPromises = args.new_tiles.map((tile, index) => {
-        return new Promise(resolve => {
-            setTimeout(() => {
-                this.drawTile(tile).then(resolve);
-            }, index * 300); // Décalage de 300ms entre chaque ajout
-        });
-    });
-
-    // Attendre que toutes les nouvelles tuiles aient été ajoutées
+    // Ajouter les nouvelles tuiles avec un décalage progressif
+    const drawPromises = args.new_tiles.map((tile, index) =>
+        this.wait(index * 300).then(() => this.drawTile(tile))
+    );
     await Promise.all(drawPromises);
 
-    // Mettre à jour le compteur après les animations
+    // Mise à jour du compteur
     this.thumb_counter[args.player_id].incValue(-2);
 },
 
-
 notif_resetCards: async function(args) {
-
-    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-    // Suppression des anciennes cartes en parallèle avec délais
-    await Promise.all(
-        Object.entries(args.old_cards).map(([index, card]) => 
-            delay(index * 200).then(() => this.resetCard(card))
-        )
+    // Supprimer les anciennes cartes avec un décalage progressif
+    const discardPromises = Object.entries(args.old_cards).map(([index, card]) =>
+        this.wait(index * 200).then(() => this.resetCard(card))
     );
+    await Promise.all(discardPromises);
 
+    // Petit délai pour la transition
+    await this.wait(200);
 
-    // Petit délai avant d'ajouter les nouvelles cartes
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    // Ajout des nouvelles cartes en parallèle avec délais
-    await Promise.all(
-        Object.entries(args.new_cards).map(([index, card]) => 
-            delay(index * 600).then(() => {
-                //this.flipAndDrawCard(card);
-                this.drawCard(card);
-                (card.genre === 'plant' ? this.plant_deck : this.room_deck).incValue(-1);
-            })
-        )
+    // Ajouter les nouvelles cartes avec un décalage progressif
+    const drawPromises = Object.entries(args.new_cards).map(([index, card]) =>
+        this.wait(index * 600).then(() => {
+            this.drawCard(card);
+            (card.genre === 'plant' ? this.plant_deck : this.room_deck).incValue(-1);
+        })
     );
+    await Promise.all(drawPromises);
 
+    // Mise à jour du compteur
     this.thumb_counter[args.player_id].incValue(-2);
 },
 

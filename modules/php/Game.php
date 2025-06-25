@@ -602,7 +602,7 @@ class Game extends \Table
         $ret = self::argPlayerTurn();
 
         if (!in_array($arg1, $ret['selectable']) && !in_array($arg1, $ret['buttons']) && !in_array($arg1, $ret['selectablemulti'])) {
-            throw new BgaUserException("Not a valid selection");
+            throw new \BgaUserException(clienttranslate("Not a valid selection"));
         }
     }
 
@@ -3019,7 +3019,7 @@ class Game extends \Table
         $player_id = self::getActivePlayerId();
         $player_name = self::getPlayerNameById($player_id);
 
-        self::checkArgs('plant_'.$explode[0]);
+        self::checkArgs('plant_' . $explode[0]);
 
         foreach ($explode as $plant_type) {
 
