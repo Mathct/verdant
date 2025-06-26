@@ -3037,7 +3037,7 @@ notif_refillMarket: async function(args) {
 
 
 
-otif_refillMarketSolo: async function(args) {
+notif_refillMarketSolo: async function(args) {
 
     // on place un pouce vert en face card_thumb et genre
     await this.addThumbOnCard(args.card_thumb);

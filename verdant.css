@@ -52,15 +52,22 @@ body {
   font-family: "MyriadPro";
   font-style: normal;
   font-weight: normal;
-  src: local("MyriadPro"), url("img/MyriadPro.otf");
+  src: local("MyriadPro"), 
+    url("img/MyriadPro.woff2") format("woff2"),
+    url("img/MyriadPro.woff") format("woff"),
+    url("img/MyriadPro.otf") format("opentype");
 }
 
-  @font-face {
+@font-face {
   font-family: "MinionPro";
   font-style: normal;
   font-weight: normal;
-  src: local("MinionPro"), url("img/MinionPro.otf");
+  src: local("MinionPro"),
+    url("img/MinionPro.woff2") format("woff2"),
+    url("img/MinionPro.woff") format("woff"),
+    url("img/MinionPro.otf") format("opentype");
 }
+
 
   @font-face {
   font-family: "Arial";
@@ -91,7 +98,7 @@ body {
   }
 
   .tooltip_bigtitle {
-    font-family: MinionPro;
+    font-family: "MinionPro", "Garamond", "Times New Roman", serif;
     font-size: 24pt;
     font-variant: small-caps;
     color: #815a18;
@@ -99,7 +106,7 @@ body {
   }
   
   .tooltip_title {
-    font-family: MinionPro;
+    font-family: "MinionPro", "Garamond", "Times New Roman", serif;
     font-size: 20pt;
     font-variant: small-caps;
     /*color:#719e1f;*/
@@ -107,7 +114,7 @@ body {
   }
 
     .tooltip_subtitle {
-    font-family: MinionPro;
+    font-family: "MinionPro", "Garamond", "Times New Roman", serif;
     font-size: 16pt;
     font-variant: small-caps;
     /*color:#719e1f;*/
@@ -115,13 +122,13 @@ body {
   }
   
   .tooltip_desc {
-    font-family: MyriadPro;
+    font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
     font-size: 12pt;
     color:#1f3a21;
   }
 
   .tooltip_info {
-    font-family: MinionPro;
+    font-family: "MinionPro", "Garamond", "Times New Roman", serif;
     font-size: 12pt;
     color:#2a5d9c;
   }
@@ -181,7 +188,7 @@ body {
 
 /* Compteur */
 .icon-text {
-font-family: "MyriadPro";
+font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   font-size: 16pt;
   line-height: 50px;
 }
@@ -237,7 +244,7 @@ font-family: "MyriadPro";
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: MyriadPro;
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   font-weight: bold;
   font-size: 24pt;
   color: white;
@@ -300,7 +307,7 @@ font-family: "MyriadPro";
 .market-name .market-name-text{
   font-size: 20pt;
   font-weight: bold;
-  font-family: "MyriadPro";
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   color: #ffffff;
   text-shadow: 0 0 1px black, 0 0 2px black, 0 0 3px black;
 }
@@ -385,7 +392,7 @@ font-family: "MyriadPro";
 
 .deck-text {
   position: absolute;
-  font-family: "MyriadPro";
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   font-size: 20pt;
   font-weight: bold;
   transform: translateX(-50%);
@@ -426,7 +433,7 @@ font-family: "MyriadPro";
   color: #1f3a21;
   font-size: 20pt;
   font-weight: bold;
-  font-family: "MyriadPro";
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   text-shadow: 2px 2px 5px white, -2px -2px 5px white, 2px -2px 5px white, -2px 2px 5px white;
 }
 
@@ -439,7 +446,7 @@ font-family: "MyriadPro";
   color: #e0e7c2;
   font-size: 20pt;
   font-weight: bold;
-  font-family: "MyriadPro";
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   text-shadow: 2px 2px 5px black, -2px -2px 5px black, 2px -2px 5px black, -2px 2px 5px black;
 }
 
@@ -451,7 +458,7 @@ font-family: "MyriadPro";
   color: #e0e7c2;
   font-size: 12pt;
   font-weight: bold;
-  font-family: "MyriadPro";
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   text-shadow: 2px 2px 5px black, -2px -2px 5px black, 2px -2px 5px black, -2px 2px 5px black;
 }
 
@@ -489,7 +496,7 @@ font-family: "MyriadPro";
 .house-name .player-name {
   font-size: 20pt;
   font-weight: bold;
-  font-family: "MyriadPro";
+  font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   text-shadow: 0 0 1px white, 0 0 2px white, 0 0 3px white;
 }
 
