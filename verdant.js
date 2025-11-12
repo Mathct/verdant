@@ -2770,11 +2770,11 @@ getTooltipRoomGoalContent : function( room_goal_type, id) {
         room_goal_y = 2;
     }
     else if( room_goal_type == 11) {
-        room_goal_x = 3;
+        room_goal_x = 4;
         room_goal_y = 3;       
     }
     else if( room_goal_type == 12) {
-        room_goal_x = 4;
+        room_goal_x = 5;
         room_goal_y = 3;       
     }
     else if( room_goal_type == 13) {
