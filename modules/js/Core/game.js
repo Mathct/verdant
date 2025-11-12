@@ -43,11 +43,11 @@ define(['dojo', 'dojo/_base/declare', 'ebg/core/gamegui'], (dojo, declare) => {
         this.updateLayout();
       }
     },*/
-
+/*
     unsetModeInstantaneous() {
       this.inherited(arguments);
       this.updateLayout();
-    },
+    },*/
 
     /*
      * [Undocumented] Override BGA framework functions to call onLoadingComplete when loading is done
