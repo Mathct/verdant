@@ -1,18 +1,27 @@
 <?php
 
 namespace Bga\Games\verdant;   // ATTENTION NOM DU JEU
-use APP_GameClass;
+
+use Bga\GameFramework\Table;
 
 //require_once 'actions/Actions.php'; // Inclure le fichier contenant les fonctions
 
-class PendingSolo extends APP_GameClass
+class PendingSolo
 {
     //use ActionsTrait; // ATTENTION
+    
+    public mixed $player_no;
+    public mixed $player_id;
+    public mixed $player_name;
+    public mixed $player_score;
+    public mixed $player_color;
+    public mixed $color_type;
+    public mixed $player_pref_confirm;
 
     public function __construct($player_id)
     {
         $this->player_id = $player_id;
-        $p = self::getObjectFromDB("SELECT * FROM player WHERE player_id = {$player_id}");
+        $p = Table::getObjectFromDB("SELECT * FROM `player` WHERE `player_id` = {$player_id}");
         $this->player_no = $p['player_no'];
         $this->player_id = $p['player_id'];
         $this->player_name = $p['player_name'];
@@ -25,7 +34,7 @@ class PendingSolo extends APP_GameClass
 
         /// PREFERENCE DE CONFIRMATION
 
-        $this->player_pref_confirm = self::getUniqueValueFromDB("SELECT pgp_value FROM bga_user_preferences WHERE pgp_player='{$this->player_id}' AND pgp_preference_id = 100");
+        $this->player_pref_confirm = Table::getUniqueValueFromDB("SELECT `pgp_value` FROM `bga_user_preferences` WHERE `pgp_player`='{$this->player_id}' AND `pgp_preference_id` = 100");
     }
 
 
@@ -40,7 +49,7 @@ class PendingSolo extends APP_GameClass
         $ret['title'] = clienttranslate('${actplayer} must take an action');
         $ret['titleyou'] = array();
 
-        $thumb = game::$instance->getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
+        $thumb = game::$instance->getUniqueValueFromDB("SELECT `player_thumb` FROM `player` WHERE `player_id`={$this->player_id}");
 
         $possible_plant = game::$instance->PossiblePosition($this->player_id, 'plant_0');
         $possible_room = game::$instance->PossiblePosition($this->player_id, 'room_0');
@@ -57,8 +66,8 @@ class PendingSolo extends APP_GameClass
             
         }
 
-        $plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
-        $rooms = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
+        $plants = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = 'market'", true);
+        $rooms = Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = 'market'", true);
 
         if ($possible_plant != null)
         {
@@ -108,8 +117,8 @@ class PendingSolo extends APP_GameClass
 
         $explode_selected = explode('_', $parg1);
 
-        $plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
-        $rooms = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
+        $plants = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = 'market'", true);
+        $rooms = Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = 'market'", true);
         $possible_plant = game::$instance->PossiblePosition($this->player_id, 'plant_0');
         $possible_room = game::$instance->PossiblePosition($this->player_id, 'room_0');
 
@@ -157,7 +166,7 @@ class PendingSolo extends APP_GameClass
             {
             if($this->player_pref_confirm == 1)
             {
-                $thumbplayer = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id = '{$this->player_id}'");
+                $thumbplayer = Table::getUniqueValueFromDB("SELECT `player_thumb` FROM `player` WHERE `player_id` = '{$this->player_id}'");
                 if($thumbplayer >= 2)
                 {
                     game::$instance->setGameStateValue('token_change_allowed',1);
@@ -167,21 +176,21 @@ class PendingSolo extends APP_GameClass
                 $explode_position = explode('_', $varg1);
 
                 if ($explode_market[0] == 'plant') {
-                    $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM plant WHERE card_type = '{$explode_market[1]}'");
+                    $place_market = Table::getUniqueValueFromDB("SELECT `card_location_arg` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
 
-                    $card_id = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                    $card_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
                     $card_type = $explode_market[1];
 
-                    $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+                    $card_before = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `plant` WHERE `card_id` = {$card_id}");
                     $card_before['genre'] = 'plant';
 
 
-                    $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
-                    self::DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                    self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                    $thumb = Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
+                    Table::DbQuery("UPDATE `plant` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                    Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                     game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
 
-                    $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+                    $card_after = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `plant` WHERE `card_id` = {$card_id}");
 
                     $card_color = $this->color_type[game::$instance->_PLANT_CARDS[$card_type]['type'] -1];
 
@@ -204,20 +213,20 @@ class PendingSolo extends APP_GameClass
                 }
 
                 if ($explode_market[0] == 'room') {
-                    $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type = '{$explode_market[1]}'");
+                    $place_market = Table::getUniqueValueFromDB("SELECT `card_location_arg` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
 
-                    $card_id = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                    $card_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
                     $card_type = $explode_market[1];
 
-                    $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                    $card_before = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `room` WHERE `card_id` = {$card_id}");
                     $card_before['genre'] = 'room';
 
-                    $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
-                    self::DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                    self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                    $thumb = Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
+                    Table::DbQuery("UPDATE `room` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                    Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                     game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
 
-                    $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                    $card_after = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `room` WHERE `card_id` = {$card_id}");
 
                     $card_log_type = (game::$instance->_ROOM_CARDS[$card_type]['type'] -1)*(-100) ;
 
@@ -284,7 +293,7 @@ class PendingSolo extends APP_GameClass
             game::$instance->addPending($this->player_id, "NormalTurn");
         } else {
 
-            $thumbplayer = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id = '{$this->player_id}'");
+            $thumbplayer = Table::getUniqueValueFromDB("SELECT `player_thumb` FROM `player` WHERE `player_id` = '{$this->player_id}'");
             if($thumbplayer >= 2)
             {
                 game::$instance->setGameStateValue('token_change_allowed',1);
@@ -295,18 +304,18 @@ class PendingSolo extends APP_GameClass
 
             if ($explode_market[0] == 'plant') {
 
-                $place_market = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM plant WHERE card_type = '{$explode_market[1]}'");
+                $place_market = game::$instance->getUniqueValueFromDB("SELECT `card_location_arg` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
 
-                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
                 $card_before = game::$instance->getPlant("card_id = {$card_id}");
                 $card_before['genre'] = 'plant';
 
 
-                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
-                game::$instance->DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT `card_thumb` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE `plant` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                 game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
 
                 $card_after = game::$instance->getPlant("card_id = {$card_id}");
@@ -331,17 +340,17 @@ class PendingSolo extends APP_GameClass
             }
             if ($explode_market[0] == 'room') {
 
-                $place_market = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type = '{$explode_market[1]}'");
+                $place_market = game::$instance->getUniqueValueFromDB("SELECT `card_location_arg` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
 
-                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
                 $card_before = game::$instance->getRoom("card_id = {$card_id}");
                 $card_before['genre'] = 'room';
 
-                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
-                game::$instance->DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT `card_thumb` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE `room` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                 game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
 
                 $card_after = game::$instance->getRoom("card_id = {$card_id}");
@@ -386,16 +395,16 @@ class PendingSolo extends APP_GameClass
 
 
 
-        $tile_market_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
-        $tile_market_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+        $tile_market_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
+        $tile_market_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
 
         if ($tile_market_type != null) {
             $ret["selectable"][] = 'tile_' . $tile_market_id;
             $ret['buttons'][] = 'tilebt_' . $tile_market_type;
         }
 
-        $tile_reserve_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
-        $tile_reserve_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+        $tile_reserve_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
+        $tile_reserve_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
         if ($tile_reserve_type != null) {
             $ret["selectable"][] = 'tile_' . $tile_reserve_id;
@@ -409,9 +418,9 @@ class PendingSolo extends APP_GameClass
 
         if (($tile_market_type != null) || ($tile_reserve_type != null)) {
 
-            $thumb = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
-            $all_plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = '{$this->player_id}'", true);
-            $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+            $thumb = Table::getUniqueValueFromDB("SELECT `player_thumb` FROM `player` WHERE `player_id`={$this->player_id}");
+            $all_plants = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = '{$this->player_id}'", true);
+            $all_pots = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `pot` WHERE `card_location` = '{$this->player_id}'", true);
             $plants_without_pots = array_diff($all_plants, $all_pots);
 
             if ((!empty($plants_without_pots)) && ($thumb >= 2)) {
@@ -452,11 +461,11 @@ class PendingSolo extends APP_GameClass
         } elseif ($varg1 == null) {
             game::$instance->addPending($this->player_id, "FinalTurn");
         } else {
-            $tile_market_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
-            $tile_market_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+            $tile_market_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
+            $tile_market_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
 
-            $tile_reserve_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
-            $tile_reserve_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+            $tile_reserve_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
+            $tile_reserve_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
             if($tile_market_type != $tile_reserve_type)
             {
@@ -521,7 +530,7 @@ class PendingSolo extends APP_GameClass
         $ret['buttons'] = array();
         $ret['title'] = clienttranslate('${actplayer} must take an action');
 
-        $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$parg1}'");
+        $type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_id` = '{$parg1}'");
 
         $x = $type % 10 - 1;
         $y = floor($type / 10) - 1;
@@ -534,8 +543,8 @@ class PendingSolo extends APP_GameClass
         }
 
 
-        $count_card_with_token = count(self::getObjectListFromDB("SELECT card_location_arg FROM tile WHERE card_location = '{$this->player_id}' AND card_location_arg != 99", true));
-        $count_card_room = count(self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = '{$this->player_id}'", true));
+        $count_card_with_token = count(Table::getObjectListFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_location` = '{$this->player_id}' AND `card_location_arg` != 99", true));
+        $count_card_room = count(Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = '{$this->player_id}'", true));
 
         if ($count_card_room > $count_card_with_token) {
             $ret['titleyou'] = clienttranslate('${you} must choose a room for #icon#');
@@ -548,8 +557,8 @@ class PendingSolo extends APP_GameClass
         $ret["selected"][] = 'tile_' . $parg1;
 
 
-        $all_card_with_token = self::getObjectListFromDB("SELECT card_location_arg FROM tile WHERE card_location = '{$this->player_id}' AND card_location_arg != 99", true);
-        $all_card_room = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = '{$this->player_id}'", true);
+        $all_card_with_token = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_location` = '{$this->player_id}' AND `card_location_arg` != 99", true);
+        $all_card_room = Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = '{$this->player_id}'", true);
 
         foreach ($all_card_room as $room) {
             if (!in_array($room, $all_card_with_token)) {
@@ -576,27 +585,27 @@ class PendingSolo extends APP_GameClass
 
             $explode = explode('_', $varg1);
 
-            $before_emplacement = self::getUniqueValueFromDB("SELECT card_location FROM tile WHERE card_id = '{$parg1}'");
+            $before_emplacement = Table::getUniqueValueFromDB("SELECT `card_location` FROM `tile` WHERE `card_id` = '{$parg1}'");
 
             if ($before_emplacement == 'market') {
 
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg 
-                    FROM tile 
-                    WHERE card_location = 'market' AND card_location_arg = '{$parg2}'");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg 
+                    FROM `tile` 
+                    WHERE `card_location` = 'market' AND `card_location_arg` = '{$parg2}'");
             } else {
 
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg 
-                    FROM tile 
-                    WHERE card_location = '{$this->player_id}' AND card_location_arg = 99");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg 
+                    FROM `tile` 
+                    WHERE `card_location` = '{$this->player_id}' AND `card_location_arg` = 99");
             }
 
-            $info_card = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg 
-                FROM room 
-                WHERE card_type= '{$explode[1]}'");
+            $info_card = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg 
+                FROM `room` 
+                WHERE `card_type`= '{$explode[1]}'");
 
             game::$instance->tile->moveCard($parg1, $this->player_id, $explode[1]);
 
-            $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$parg1}'");
+            $type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_id` = '{$parg1}'");
             $x = $type % 10 - 1;
             $y = floor($type / 10) - 1;
 
@@ -666,7 +675,7 @@ class PendingSolo extends APP_GameClass
             $explode = explode(';', $parg1);
             $explode2 = explode('_', $parg2);
 
-            $before_emplacement = game::$instance->getUniqueValueFromDB("SELECT card_location FROM tile WHERE card_id = '{$explode[0]}'");
+            $before_emplacement = game::$instance->getUniqueValueFromDB("SELECT `card_location` FROM `tile` WHERE `card_id` = '{$explode[0]}'");
 
             if ($before_emplacement == 'market') {
 
@@ -680,7 +689,7 @@ class PendingSolo extends APP_GameClass
 
             game::$instance->tile->moveCard($explode[0], $this->player_id, $explode2[1]);
 
-            $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$explode[0]}'");
+            $type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_id` = '{$explode[0]}'");
             $x = $type % 10 - 1;
             $y = floor($type / 10) - 1;
 
@@ -719,11 +728,11 @@ class PendingSolo extends APP_GameClass
         $ret['buttons'] = array();
         $ret['title'] = clienttranslate('${actplayer} must take an action');
 
-        $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$parg1}'");
-        $location = self::getUniqueValueFromDB("SELECT card_location FROM tile WHERE card_id = '{$parg1}'");
-        $location_arg = self::getUniqueValueFromDB("SELECT card_location_arg FROM tile WHERE card_id = '{$parg1}'");
+        $type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_id` = '{$parg1}'");
+        $location = Table::getUniqueValueFromDB("SELECT `card_location` FROM `tile` WHERE `card_id` = '{$parg1}'");
+        $location_arg = Table::getUniqueValueFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_id` = '{$parg1}'");
 
-        $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id = '{$parg1}'");
+        $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_id` = '{$parg1}'");
 
 
         $ret["selected"][] = 'tile_' . $info_tile['id'];
@@ -738,9 +747,9 @@ class PendingSolo extends APP_GameClass
             $ret['icon'] = '<span class="item_bt" style="background-position: -' . $x . '00% -' . $y . '00% ;"></span>';
         }
 
-        $all_plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = '{$this->player_id}'", true);
-        $all_rooms = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = '{$this->player_id}'", true);
-        $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+        $all_plants = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = '{$this->player_id}'", true);
+        $all_rooms = Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = '{$this->player_id}'", true);
+        $all_pots = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `pot` WHERE `card_location` = '{$this->player_id}'", true);
 
         if ($type == 61) {
             $ret['titleyou'] = clienttranslate('#icon# ${you} must choose a plant (+3 Verdancy)');
@@ -789,8 +798,8 @@ class PendingSolo extends APP_GameClass
         if ($varg1 == 'cancel') {
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg2);
         } else {
-            $type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$parg1}'");
-            $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+            $type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_id` = '{$parg1}'");
+            $nbre_pot_market = count(Table::getObjectListFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market'", true));
 
             if(($this->player_pref_confirm == 1)||($type == 62))
             {
@@ -802,9 +811,9 @@ class PendingSolo extends APP_GameClass
                 $explode = explode('_', $varg1);
                 if($explode[1] <= 60)
                 {
-                $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
-                self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +3 WHERE card_type = '{$explode[1]}'");
-                $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                $before_verdoiement = Table::getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$explode[1]}'");
+                Table::DbQuery("UPDATE `plant` set `card_type_arg` = `card_type_arg` +3 WHERE `card_type` = '{$explode[1]}'");
+                $total_verdoiement = Table::getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$explode[1]}'");
                 $max_verdoiement = game::$instance->_PLANT_CARDS[$explode[1]]['verdancy'];
 
                 if ($total_verdoiement < $max_verdoiement) {
@@ -817,26 +826,26 @@ class PendingSolo extends APP_GameClass
                     if(game::$instance->getGameStateValue('last_turn') != 1)
                     {
                     if ($nbre_pot_market == 4) {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market' AND `card_location_arg` =4");
                         $pot_origin = 'market_cell_15';
                     } else {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'discard' ORDER BY `card_type` ASC LIMIT 1");
+                        $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
                         $pot_origin = 'pot_discard_' . $valeur_pot;
                     }
 
-                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-                    self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-                    self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
+                    Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $explode[1] WHERE `card_id` = '{$pot_id}'");
+                    Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$explode[1]}'");
                     }
 
                     else
                     {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'deck' AND `card_type` = 0 ORDER BY `card_id` ASC LIMIT 1");
                         $valeur_pot = 0;
                         $pot_origin = 'pot_deck_0';
-                        self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                        Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $explode[1] WHERE `card_id` = '{$pot_id}'");
+                        Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$explode[1]}'");
                     }
                 }
 
@@ -858,7 +867,7 @@ class PendingSolo extends APP_GameClass
 
             else
                 {
-                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +3 WHERE player_id = {$this->player_id}");
+                    game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` +3 WHERE `player_id` = {$this->player_id}");
                     game::$instance->notifyAllPlayers(
                         'addGreenThumbs',
                         '',
@@ -872,7 +881,7 @@ class PendingSolo extends APP_GameClass
 
                 }
 
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id = '{$parg1}'");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_id` = '{$parg1}'");
 
                 game::$instance->tile->moveCard($parg1, 'discard');
 
@@ -891,7 +900,7 @@ class PendingSolo extends APP_GameClass
             }
 
             if ($type == 62) {
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id = '{$parg1}'");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_id` = '{$parg1}'");
 
                 game::$instance->tile->moveCard($parg1, 'discard');
 
@@ -912,21 +921,21 @@ class PendingSolo extends APP_GameClass
 
             if ($type == 63) {
                 $explode = explode('_', $varg1);
-                $position_room = self::getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type='{$explode[1]}'");
-                $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+                $position_room = Table::getUniqueValueFromDB("SELECT `card_location_arg` FROM `room` WHERE `card_type`='{$explode[1]}'");
+                $all_pots = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `pot` WHERE `card_location` = '{$this->player_id}'", true);
 
                 $tests = [$position_room + 1, $position_room - 1, $position_room + 10, $position_room - 10];
 
                 foreach ($tests as $test) {
-                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+                    $nbre_pot_market = count(Table::getObjectListFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market'", true));
                     $pot_origin = 0;
-                    $type_plant = self::getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location ='{$this->player_id}' AND card_location_arg='{$test}'");
+                    $type_plant = Table::getUniqueValueFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` ='{$this->player_id}' AND `card_location_arg`='{$test}'");
                     if (($type_plant != null) && (!in_array($type_plant, $all_pots))) {
 
                         if($type_plant <= 60)
                         {
-                        self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$type_plant}'");
+                        Table::DbQuery("UPDATE `plant` set `card_type_arg` = `card_type_arg` +1 WHERE `card_type` = '{$type_plant}'");
+                        $total_verdoiement = Table::getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$type_plant}'");
                         $max_verdoiement = game::$instance->_PLANT_CARDS[$type_plant]['verdancy'];
 
                         if ($total_verdoiement < $max_verdoiement) {
@@ -936,27 +945,27 @@ class PendingSolo extends APP_GameClass
                             if(game::$instance->getGameStateValue('last_turn') != 1)
                             {
                             if ($nbre_pot_market == 4) {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                                $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market' AND `card_location_arg` =4");
                                 $pot_origin = 'market_cell_15';
                             } else {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                                $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'discard' ORDER BY `card_type` ASC LIMIT 1");
+                                $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
                                 $pot_origin = 'pot_discard_' . $valeur_pot;
                             }
 
 
-                            $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
-                            self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
-                            self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                            $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
+                            Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $type_plant WHERE `card_id` = '{$pot_id}'");
+                            Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$type_plant}'");
                             }
 
                             else
                             {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                                $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'deck' AND `card_type` = 0 ORDER BY `card_id` ASC LIMIT 1");
                                 $valeur_pot = 0;
                                 $pot_origin = 'pot_deck_0';
-                                self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
-                                self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                                Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $type_plant WHERE `card_id` = '{$pot_id}'");
+                                Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$type_plant}'");
                             }
 
                         }
@@ -977,7 +986,7 @@ class PendingSolo extends APP_GameClass
                     }
                     else
                 {
-                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$this->player_id}");
+                    game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` +1 WHERE `player_id` = {$this->player_id}");
                     game::$instance->notifyAllPlayers(
                         'addGreenThumbs',
                         '',
@@ -994,7 +1003,7 @@ class PendingSolo extends APP_GameClass
                     }
                 }
 
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id = '{$parg1}'");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_id` = '{$parg1}'");
 
                 game::$instance->tile->moveCard($parg1, 'discard');
 
@@ -1080,17 +1089,17 @@ class PendingSolo extends APP_GameClass
 
             $explode2 = explode(';', $parg1);
             $explode = explode('_', $parg2);
-            $type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_id = '{$explode2[0]}'");
-            $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+            $type = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_id` = '{$explode2[0]}'");
+            $nbre_pot_market = count(Table::getObjectListFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market'", true));
 
             if ($type == 61) {
 
                 if($explode[1] <= 60)
                 {
                 $pot_origin = 0;
-                $before_verdoiement = game::$instance->getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
-                game::$instance->DbQuery("UPDATE plant set card_type_arg = card_type_arg +3 WHERE card_type = '{$explode[1]}'");
-                $total_verdoiement = game::$instance->getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                $before_verdoiement = game::$instance->getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$explode[1]}'");
+                game::$instance->DbQuery("UPDATE `plant` set `card_type_arg` = `card_type_arg` +3 WHERE `card_type` = '{$explode[1]}'");
+                $total_verdoiement = game::$instance->getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$explode[1]}'");
                 $max_verdoiement = game::$instance->_PLANT_CARDS[$explode[1]]['verdancy'];
 
                 if ($total_verdoiement < $max_verdoiement) {
@@ -1103,27 +1112,27 @@ class PendingSolo extends APP_GameClass
                     if(game::$instance->getGameStateValue('last_turn') != 1)
                     {
                     if ($nbre_pot_market == 4) {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market' AND `card_location_arg` =4");
                         $pot_origin = 'market_cell_15';
                     } else {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'discard' ORDER BY `card_type` ASC LIMIT 1");
+                        $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
                         $pot_origin = 'pot_discard_' . $valeur_pot;
                     }
 
                     
-                    $valeur_pot = game::$instance->getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                    $valeur_pot = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
 
-                    game::$instance->DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-                    game::$instance->DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    game::$instance->DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $explode[1] WHERE `card_id` = '{$pot_id}'");
+                    game::$instance->DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$explode[1]}'");
                     }
                     else
                     {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'deck' AND `card_type` = 0 ORDER BY `card_id` ASC LIMIT 1");
                         $valeur_pot = 0;
                         $pot_origin = 'pot_deck_0';
-                        self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                        Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $explode[1] WHERE `card_id` = '{$pot_id}'");
+                        Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$explode[1]}'");
                     }
 
                 }
@@ -1146,7 +1155,7 @@ class PendingSolo extends APP_GameClass
 
             else
                 {
-                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +3 WHERE player_id = {$this->player_id}");
+                    game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` +3 WHERE `player_id` = {$this->player_id}");
                     game::$instance->notifyAllPlayers(
                         'addGreenThumbs',
                         '',
@@ -1182,21 +1191,21 @@ class PendingSolo extends APP_GameClass
 
             if ($type == 63) {
                 
-                $position_room = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM room WHERE card_type='{$explode[1]}'");
-                $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+                $position_room = game::$instance->getUniqueValueFromDB("SELECT `card_location_arg` FROM `room` WHERE `card_type`='{$explode[1]}'");
+                $all_pots = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `pot` WHERE `card_location` = '{$this->player_id}'", true);
 
                 $tests = [$position_room + 1, $position_room - 1, $position_room + 10, $position_room - 10];
 
                 foreach ($tests as $test) {
-                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+                    $nbre_pot_market = count(Table::getObjectListFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market'", true));
                     $pot_origin = 0;
-                    $type_plant = game::$instance->getUniqueValueFromDB("SELECT card_type FROM plant WHERE card_location ='{$this->player_id}' AND card_location_arg='{$test}'");
+                    $type_plant = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` ='{$this->player_id}' AND `card_location_arg`='{$test}'");
                     if (($type_plant != null) && (!in_array($type_plant, $all_pots))) {
 
                         if($type_plant <= 60)
                         {
-                        game::$instance->DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$type_plant}'");
-                        $total_verdoiement = game::$instance->getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$type_plant}'");
+                        game::$instance->DbQuery("UPDATE `plant` set `card_type_arg` = `card_type_arg` +1 WHERE `card_type` = '{$type_plant}'");
+                        $total_verdoiement = game::$instance->getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$type_plant}'");
                         $max_verdoiement = game::$instance->_PLANT_CARDS[$type_plant]['verdancy'];
 
                         if ($total_verdoiement < $max_verdoiement) {
@@ -1206,28 +1215,28 @@ class PendingSolo extends APP_GameClass
                             if(game::$instance->getGameStateValue('last_turn') != 1)
                             {
                             if ($nbre_pot_market == 4) {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                                $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market' AND `card_location_arg` =4");
                                 $pot_origin = 'market_cell_15';
                             } else {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                                $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                                $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'discard' ORDER BY `card_type` ASC LIMIT 1");
+                                $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
                                 $pot_origin = 'pot_discard_' . $valeur_pot;
                             }
 
                             
-                            $valeur_pot = game::$instance->getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                            $valeur_pot = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
 
-                            game::$instance->DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
+                            game::$instance->DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $type_plant WHERE `card_id` = '{$pot_id}'");
 
-                            game::$instance->DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                            game::$instance->DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$type_plant}'");
                             }
                             else
                             {
-                                $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                                $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'deck' AND `card_type` = 0 ORDER BY `card_id` ASC LIMIT 1");
                                 $valeur_pot = 0;
                                 $pot_origin = 'pot_deck_0';
-                                self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $type_plant WHERE card_id = '{$pot_id}'");
-                                game::$instance->DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$type_plant}'");
+                                Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $type_plant WHERE `card_id` = '{$pot_id}'");
+                                game::$instance->DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$type_plant}'");
                             }
 
                         }
@@ -1248,7 +1257,7 @@ class PendingSolo extends APP_GameClass
                     }
                     else
                 {
-                    game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb +1 WHERE player_id = {$this->player_id}");
+                    game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` +1 WHERE `player_id` = {$this->player_id}");
                     game::$instance->notifyAllPlayers(
                         'addGreenThumbs',
                         '',
@@ -1318,11 +1327,11 @@ class PendingSolo extends APP_GameClass
         $ret['title'] = clienttranslate('${actplayer} must take an action');
         $ret['titleyou'] = clienttranslate('${you} must choose the item/tool ​​to keep in reserve');
 
-        $tile_market_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
-        $tile_market_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+        $tile_market_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
+        $tile_market_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
 
-        $tile_reserve_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
-        $tile_reserve_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+        $tile_reserve_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
+        $tile_reserve_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
 
 
@@ -1355,14 +1364,14 @@ class PendingSolo extends APP_GameClass
 
             if($this->player_pref_confirm == 1)
             {
-            $tile_market_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
-            $tile_market_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+            $tile_market_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
+            $tile_market_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
 
-            $tile_reserve_type = self::getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
-            $tile_reserve_id = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+            $tile_reserve_type = Table::getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
+            $tile_reserve_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
             if (($varg1 == "tile_" . $tile_market_id) || ($varg1 == "tilebt_" . $tile_market_type)) {
-                $info_tile_reserve = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+                $info_tile_reserve = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
                 game::$instance->tile->moveCard($tile_reserve_id, 'discard');
 
@@ -1381,7 +1390,7 @@ class PendingSolo extends APP_GameClass
 
 
 
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id='{$tile_market_id}'");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_id`='{$tile_market_id}'");
                 game::$instance->tile->moveCard($tile_market_id, $this->player_id, 99);
 
                 game::$instance->notifyAllPlayers(
@@ -1394,7 +1403,7 @@ class PendingSolo extends APP_GameClass
                     )
                 );
             } elseif (($varg1 == "tile_" . $tile_reserve_id) || ($varg1 == "tilebt_" . $tile_reserve_type) || ($tile_market_type == $tile_reserve_type)) {
-                $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_location = 'market' AND card_location_arg = '{$parg1}'");
+                $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_location` = 'market' AND `card_location_arg` = '{$parg1}'");
 
                 game::$instance->tile->moveCard($tile_market_id, 'discard');
 
@@ -1412,7 +1421,7 @@ class PendingSolo extends APP_GameClass
 
 
                 if ($tile_market_id != null) {
-                    $info_tile = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM tile WHERE card_id='{$tile_market_id}'");
+                    $info_tile = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `tile` WHERE `card_id`='{$tile_market_id}'");
 
                     game::$instance->tile->moveCard($tile_market_id, $this->player_id, 99);
 
@@ -1463,11 +1472,11 @@ class PendingSolo extends APP_GameClass
         $ret['title'] = clienttranslate('${actplayer} must take an action');
         $ret['titleyou'] = clienttranslate('${you} must confirm');
 
-        $tile_market_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
-        $tile_market_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+        $tile_market_type = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
+        $tile_market_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
 
-        $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
-        $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+        $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
+        $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
         if($tile_market_type != $tile_reserve_type)
         {
@@ -1499,11 +1508,11 @@ class PendingSolo extends APP_GameClass
             game::$instance->addPending($this->player_id, "NormalTurnStep3", $parg1);
         } else {
 
-            $tile_market_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
-            $tile_market_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='market' AND card_location_arg = '{$parg1}'");
+            $tile_market_type = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
+            $tile_market_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='market' AND `card_location_arg` = '{$parg1}'");
 
-            $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT card_type FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
-            $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location='{$this->player_id}' AND card_location_arg = 99");
+            $tile_reserve_type = game::$instance->getUniqueValueFromDB("SELECT `card_type` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
+            $tile_reserve_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location`='{$this->player_id}' AND `card_location_arg` = 99");
 
             if (($parg2 == "tile_" . $tile_market_id) || ($parg2 == "tilebt_" . $tile_market_type)) {
                 $info_tile_reserve = game::$instance->getTile("card_location='{$this->player_id}' AND card_location_arg = 99");
@@ -1598,9 +1607,9 @@ class PendingSolo extends APP_GameClass
         $ret['buttons'] = array();
         $ret['title'] = clienttranslate('${actplayer} must take an action');
 
-        $thumb = self::getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
-        $all_plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = '{$this->player_id}'", true);
-        $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+        $thumb = Table::getUniqueValueFromDB("SELECT `player_thumb` FROM `player` WHERE `player_id`={$this->player_id}");
+        $all_plants = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = '{$this->player_id}'", true);
+        $all_pots = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `pot` WHERE `card_location` = '{$this->player_id}'", true);
         $plants_without_pots = array_diff($all_plants, $all_pots);
 
         if ((!empty($plants_without_pots)) && ($thumb >= 2)) {
@@ -1656,22 +1665,22 @@ class PendingSolo extends APP_GameClass
         // ajout d'un thumb sur l'opposite card utilsée pendant le tour
 
         $tests = [1, 2, 3, 4];
-        $plant_market = self::getObjectListFromDB("SELECT card_location_arg FROM plant WHERE card_location = 'market'", true);
-        $room_market = self::getObjectListFromDB("SELECT card_location_arg FROM room WHERE card_location = 'market'", true);
+        $plant_market = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `plant` WHERE `card_location` = 'market'", true);
+        $room_market = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `room` WHERE `card_location` = 'market'", true);
 
         foreach ($tests as $test) {
             if (!in_array($test, $plant_market)) {
 
-                $info_opposite_card = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_location = 'market' AND card_location_arg = '{$test}'");
+                $info_opposite_card = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `room` WHERE `card_location` = 'market' AND `card_location_arg` = '{$test}'");
                 $info_opposite_card['genre'] = 'room';
-                self::DbQuery("UPDATE room set card_thumb = card_thumb +1 WHERE card_location = 'market' AND card_location_arg = '{$test}'");
+                Table::DbQuery("UPDATE `room` set `card_thumb` = `card_thumb` +1 WHERE `card_location` = 'market' AND `card_location_arg` = '{$test}'");
             }
 
             if (!in_array($test, $room_market)) {
 
-                $info_opposite_card = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_location = 'market' AND card_location_arg = '{$test}'");
+                $info_opposite_card = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `plant` WHERE `card_location` = 'market' AND `card_location_arg` = '{$test}'");
                 $info_opposite_card['genre'] = 'plant';
-                self::DbQuery("UPDATE plant set card_thumb = card_thumb +1 WHERE card_location = 'market' AND card_location_arg = '{$test}'");
+                Table::DbQuery("UPDATE `plant` set `card_thumb` = `card_thumb` +1 WHERE `card_location` = 'market' AND `card_location_arg` = '{$test}'");
             }
         }
 
@@ -1681,46 +1690,46 @@ class PendingSolo extends APP_GameClass
 
         $remove_thumbs = array();
 
-        $plant_discard = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_location ='market' AND card_location_arg = 4");
+        $plant_discard = Table::getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_location` ='market' AND `card_location_arg` = 4");
         if ($plant_discard != null) {
-            $valeur_thumb = intval(self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_location ='market' AND card_location_arg = 4"));
+            $valeur_thumb = intval(Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `plant` WHERE `card_location` ='market' AND `card_location_arg` = 4"));
             game::$instance->plant->moveCard($plant_discard, 'discard');
 
-            $plant_dispo = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_location = 'market' ORDER BY card_location_arg DESC LIMIT 1");
-            self::DbQuery("UPDATE plant set card_thumb = card_thumb + $valeur_thumb WHERE card_id = {$plant_dispo}");
-            $new_thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_id ='{$plant_dispo}'");
+            $plant_dispo = Table::getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_location` = 'market' ORDER BY `card_location_arg` DESC LIMIT 1");
+            Table::DbQuery("UPDATE `plant` set `card_thumb` = `card_thumb` + $valeur_thumb WHERE `card_id` = {$plant_dispo}");
+            $new_thumb = Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `plant` WHERE `card_id` ='{$plant_dispo}'");
             if ($new_thumb >= 3) {
-                self::DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = {$plant_dispo}");
-                $plant_thumb = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id ='{$plant_dispo}'");
+                Table::DbQuery("UPDATE `plant` set `card_thumb` = 0 WHERE `card_id` = {$plant_dispo}");
+                $plant_thumb = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `plant` WHERE `card_id` ='{$plant_dispo}'");
                 $plant_thumb['genre'] = 'plant';
                 $remove_thumbs[] = $plant_thumb;
             }
         }
 
-        $room_discard = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_location ='market' AND card_location_arg = 4");
+        $room_discard = Table::getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_location` ='market' AND `card_location_arg` = 4");
         if ($room_discard != null) {
-            $valeur_thumb = intval(self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_location ='market' AND card_location_arg = 4"));
+            $valeur_thumb = intval(Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `room` WHERE `card_location` ='market' AND `card_location_arg` = 4"));
             game::$instance->room->moveCard($room_discard, 'discard');
 
-            $room_dispo = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_location = 'market' ORDER BY card_location_arg DESC LIMIT 1");
-            self::DbQuery("UPDATE room set card_thumb = card_thumb + $valeur_thumb WHERE card_id = {$room_dispo}");
-            $new_thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_id ='{$room_dispo}'");
+            $room_dispo = Table::getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_location` = 'market' ORDER BY `card_location_arg` DESC LIMIT 1");
+            Table::DbQuery("UPDATE `room` set `card_thumb` = `card_thumb` + $valeur_thumb WHERE `card_id` = {$room_dispo}");
+            $new_thumb = Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `room` WHERE `card_id` ='{$room_dispo}'");
             if ($new_thumb >= 3) {
-                self::DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = {$room_dispo}");
-                $room_thumb = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id ='{$room_dispo}'");
+                Table::DbQuery("UPDATE `room` set `card_thumb` = 0 WHERE `card_id` = {$room_dispo}");
+                $room_thumb = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `room` WHERE `card_id` ='{$room_dispo}'");
                 $room_thumb['genre'] = 'room';
                 $remove_thumbs[] = $room_thumb;
             }
         }
 
-        $tile_discard = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location ='market' AND card_location_arg = 4");
+        $tile_discard = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location` ='market' AND `card_location_arg` = 4");
         if ($tile_discard != null) {
             game::$instance->tile->moveCard($tile_discard, 'discard');
         }
 
-        $pot_discard = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location ='market' AND card_location_arg = 4");
+        $pot_discard = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` ='market' AND `card_location_arg` = 4");
         if ($pot_discard != null) {
-            self::DbQuery("UPDATE pot set card_location = 'discard' WHERE card_id = {$pot_discard}");
+            Table::DbQuery("UPDATE `pot` set `card_location` = 'discard' WHERE `card_id` = {$pot_discard}");
         }
 
         
@@ -1728,21 +1737,21 @@ class PendingSolo extends APP_GameClass
         /// Decalage vers la droite de tout le  market
 
         for ($i = 3; $i >= 1; $i--) {
-            $plant_decal = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_location ='market' AND card_location_arg = '{$i}'");
+            $plant_decal = Table::getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_location` ='market' AND `card_location_arg` = '{$i}'");
             if ($plant_decal != null) {
                 game::$instance->plant->moveCard($plant_decal, 'market', $i + 1);
             }
-            $room_decal = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_location ='market' AND card_location_arg = '{$i}'");
+            $room_decal = Table::getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_location` ='market' AND `card_location_arg` = '{$i}'");
             if ($room_decal != null) {
                 game::$instance->room->moveCard($room_decal, 'market', $i + 1);
             }
-            $tile_decal = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location ='market' AND card_location_arg = '{$i}'");
+            $tile_decal = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location` ='market' AND `card_location_arg` = '{$i}'");
             if ($tile_decal != null) {
                 game::$instance->tile->moveCard($tile_decal, 'market', $i + 1);
             }
-            $pot_decal = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location ='market' AND card_location_arg = '{$i}'");
+            $pot_decal = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` ='market' AND `card_location_arg` = '{$i}'");
             if ($pot_decal != null) {
-                self::DbQuery("UPDATE pot set card_location_arg = card_location_arg +1 WHERE card_id = {$pot_decal}");
+                Table::DbQuery("UPDATE `pot` set `card_location_arg` = `card_location_arg` +1 WHERE `card_id` = {$pot_decal}");
             }
         }
 
@@ -1751,9 +1760,9 @@ class PendingSolo extends APP_GameClass
 
         /// remplissage market
         $tests = [1, 2, 3, 4];
-        $plant_market = self::getObjectListFromDB("SELECT card_location_arg FROM plant WHERE card_location = 'market'", true);
-        $room_market = self::getObjectListFromDB("SELECT card_location_arg FROM room WHERE card_location = 'market'", true);
-        $tile_market = self::getObjectListFromDB("SELECT card_location_arg FROM tile WHERE card_location = 'market'", true);
+        $plant_market = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `plant` WHERE `card_location` = 'market'", true);
+        $room_market = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `room` WHERE `card_location` = 'market'", true);
+        $tile_market = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_location` = 'market'", true);
         $tiles_pick = [];
         $cards_pick = [];
 
@@ -1777,11 +1786,11 @@ class PendingSolo extends APP_GameClass
             }
         }
 
-        $new_pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' ORDER BY card_type DESC LIMIT 1");
+        $new_pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'deck' ORDER BY `card_type` DESC LIMIT 1");
 
-        $new_pot = self::getObjectFromDb("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg FROM pot WHERE card_id='{$new_pot_id}'");
+        $new_pot = Table::getObjectFromDb("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg FROM `pot` WHERE `card_id`='{$new_pot_id}'");
 
-        self::DbQuery("UPDATE pot SET card_location = 'market', card_location_arg = 1 WHERE card_id = '{$new_pot_id}'");
+        Table::DbQuery("UPDATE `pot` SET `card_location` = 'market', `card_location_arg` = 1 WHERE `card_id` = '{$new_pot_id}'");
 
 
         game::$instance->notifyAllPlayers(
@@ -1798,10 +1807,10 @@ class PendingSolo extends APP_GameClass
             )
         );
 
-        $thumb = game::$instance->getUniqueValueFromDB("SELECT player_thumb FROM player WHERE player_id={$this->player_id}");
+        $thumb = game::$instance->getUniqueValueFromDB("SELECT `player_thumb` FROM `player` WHERE `player_id`={$this->player_id}");
         if($thumb > 5)
         {
-            game::$instance->DbQuery("UPDATE player set player_thumb = 5 WHERE player_id = {$this->player_id}");
+            game::$instance->DbQuery("UPDATE `player` set `player_thumb` = 5 WHERE `player_id` = {$this->player_id}");
             game::$instance->notifyAllPlayers(
                 'setGreenThumbs',
                 '',
@@ -1815,8 +1824,8 @@ class PendingSolo extends APP_GameClass
 
         }
 
-        $nbre_plants = count(self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = '{$this->player_id}'", true));
-        $nbre_rooms = count(self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = '{$this->player_id}'", true));
+        $nbre_plants = count(Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = '{$this->player_id}'", true));
+        $nbre_rooms = count(Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = '{$this->player_id}'", true));
 
         if($nbre_plants + $nbre_rooms == 14)
         {
@@ -1847,9 +1856,9 @@ class PendingSolo extends APP_GameClass
 
         $ret["selected"][] = 'icon_thumb_'.$this->player_id;
 
-        $plants_market = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = 'market'", true);
-        $rooms_market = self::getObjectListFromDB("SELECT card_type FROM room WHERE card_location = 'market'", true);
-        $tiles_market = self::getObjectListFromDB("SELECT card_id FROM tile WHERE card_location = 'market'", true);
+        $plants_market = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = 'market'", true);
+        $rooms_market = Table::getObjectListFromDB("SELECT `card_type` FROM `room` WHERE `card_location` = 'market'", true);
+        $tiles_market = Table::getObjectListFromDB("SELECT `card_id` FROM `tile` WHERE `card_location` = 'market'", true);
 
         if ($parg1 == 1) {
             $ret['titleyou'] = clienttranslate('${you} must choose a Thumb action');
@@ -1878,8 +1887,8 @@ class PendingSolo extends APP_GameClass
         }
 
         // ACTION D
-        $all_plants = self::getObjectListFromDB("SELECT card_type FROM plant WHERE card_location = '{$this->player_id}'", true);
-        $all_pots = self::getObjectListFromDB("SELECT card_location_arg FROM pot WHERE card_location = '{$this->player_id}'", true);
+        $all_plants = Table::getObjectListFromDB("SELECT `card_type` FROM `plant` WHERE `card_location` = '{$this->player_id}'", true);
+        $all_pots = Table::getObjectListFromDB("SELECT `card_location_arg` FROM `pot` WHERE `card_location` = '{$this->player_id}'", true);
         $plants_without_pots = array_diff($all_plants, $all_pots);
 
         $testplant = 0;
@@ -1916,14 +1925,14 @@ class PendingSolo extends APP_GameClass
 
             else {
                 $explode = explode('_', $parg2);
-                $tile = self::getUniqueValueFromDB("SELECT card_id FROM tile WHERE card_location ='market' AND card_location_arg = '{$explode[1]}'");
+                $tile = Table::getUniqueValueFromDB("SELECT `card_id` FROM `tile` WHERE `card_location` ='market' AND `card_location_arg` = '{$explode[1]}'");
                 if($tile != null)
                 {
                     if(($testplant == 1)&&(game::$instance->getGameStateValue('token_change_allowed')==1))
                     {
                         $ret['titleyou'] = clienttranslate('${you} must choose a plant (+1 Verdancy) or change the market token');
                         $ret["selected"][] = 'tile_'.$tile;
-                        $othertiles = self::getObjectListFromDB( "SELECT card_id id FROM tile WHERE card_location ='market' AND card_location_arg != '{$explode[1]}'", true );
+                        $othertiles = Table::getObjectListFromDB( "SELECT `card_id` `id` FROM `tile` WHERE `card_location` ='market' AND `card_location_arg` != '{$explode[1]}'", true );
                         foreach($othertiles as $other)
                         {
                             $ret["selectable"][] = 'tile_' . $other;
@@ -1939,7 +1948,7 @@ class PendingSolo extends APP_GameClass
                     {
                         $ret['titleyou'] = clienttranslate('${you} must change the market token');
                         $ret["selected"][] = 'tile_'.$tile;
-                        $othertiles = self::getObjectListFromDB( "SELECT card_id id FROM tile WHERE card_location ='market' AND card_location_arg != '{$explode[1]}'", true );
+                        $othertiles = Table::getObjectListFromDB( "SELECT `card_id` `id` FROM `tile` WHERE `card_location` ='market' AND `card_location_arg` != '{$explode[1]}'", true );
                         foreach($othertiles as $other)
                         {
                             $ret["selectable"][] = 'tile_' . $other;
@@ -2057,9 +2066,9 @@ class PendingSolo extends APP_GameClass
                 $explode = explode('_', $parg1);
                 if($explode[1] <= 60)
                 {
-                $before_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
-                self::DbQuery("UPDATE plant set card_type_arg = card_type_arg +1 WHERE card_type = '{$explode[1]}'");
-                $total_verdoiement = self::getUniqueValueFromDB("SELECT card_type_arg FROM plant WHERE card_type='{$explode[1]}'");
+                $before_verdoiement = Table::getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$explode[1]}'");
+                Table::DbQuery("UPDATE `plant` set `card_type_arg` = `card_type_arg` +1 WHERE `card_type` = '{$explode[1]}'");
+                $total_verdoiement = Table::getUniqueValueFromDB("SELECT `card_type_arg` FROM `plant` WHERE `card_type`='{$explode[1]}'");
                 $max_verdoiement = game::$instance->_PLANT_CARDS[$explode[1]]['verdancy'];
 
                 if ($total_verdoiement < $max_verdoiement) {
@@ -2068,31 +2077,31 @@ class PendingSolo extends APP_GameClass
 
                     if(game::$instance->getGameStateValue('last_turn') != 1)
                     {
-                    $nbre_pot_market = count(self::getObjectListFromDB("SELECT card_id FROM pot WHERE card_location = 'market'", true));
+                    $nbre_pot_market = count(Table::getObjectListFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market'", true));
 
                     if ($nbre_pot_market == 4) {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'market' AND card_location_arg =4");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'market' AND `card_location_arg` =4");
                         $pot_origin = 'market_cell_15';
                     } else {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'discard' ORDER BY card_type ASC LIMIT 1");
-                        $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'discard' ORDER BY `card_type` ASC LIMIT 1");
+                        $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
                         $pot_origin = 'pot_discard_' . $valeur_pot;
                     }
 
 
-                    $valeur_pot = self::getUniqueValueFromDB("SELECT card_type FROM pot WHERE card_id = '{$pot_id}'");
+                    $valeur_pot = Table::getUniqueValueFromDB("SELECT `card_type` FROM `pot` WHERE `card_id` = '{$pot_id}'");
 
-                    self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
+                    Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $explode[1] WHERE `card_id` = '{$pot_id}'");
 
-                    self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                    Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$explode[1]}'");
                     }
                     else
                     {
-                        $pot_id = self::getUniqueValueFromDB("SELECT card_id FROM pot WHERE card_location = 'deck' AND card_type = 0 ORDER BY card_id ASC LIMIT 1");
+                        $pot_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `pot` WHERE `card_location` = 'deck' AND `card_type` = 0 ORDER BY `card_id` ASC LIMIT 1");
                         $valeur_pot = 0;
                         $pot_origin = 'pot_deck_0';
-                        self::DbQuery("UPDATE pot SET card_location = {$this->player_id}, card_location_arg = $explode[1] WHERE card_id = '{$pot_id}'");
-                        self::DbQuery("UPDATE plant SET card_type_arg = -1 WHERE card_type = '{$explode[1]}'");
+                        Table::DbQuery("UPDATE `pot` SET `card_location` = {$this->player_id}, `card_location_arg` = $explode[1] WHERE `card_id` = '{$pot_id}'");
+                        Table::DbQuery("UPDATE `plant` SET `card_type_arg` = -1 WHERE `card_type` = '{$explode[1]}'");
                     }
 
                 }
@@ -2129,7 +2138,7 @@ class PendingSolo extends APP_GameClass
 
 
 
-                self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+                Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` - 2 WHERE `player_id` = {$this->player_id}");
 
                 $icon = '<span class="thumb_bt"></span>';
                 game::$instance->notifyAllPlayers(
@@ -2145,7 +2154,7 @@ class PendingSolo extends APP_GameClass
 
             if (strpos($parg1, "tile") === 0)
             {
-                self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+                Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` - 2 WHERE `player_id` = {$this->player_id}");
 
                 $icon = '<span class="thumb_bt"></span>';
                 game::$instance->notifyAllPlayers(
@@ -2176,7 +2185,7 @@ class PendingSolo extends APP_GameClass
                 if (strpos($parg1, "tile") === 0)
                 {
                     $explode = explode('_', $parg1);
-                    $newplace = self::getUniqueValueFromDB("SELECT card_location_arg FROM tile WHERE card_id = '{$explode[1]}'");
+                    $newplace = Table::getUniqueValueFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_id` = '{$explode[1]}'");
                     game::$instance->addPending($this->player_id, "NormalTurnStep3", $newplace);
                 }
                 else{
@@ -2227,24 +2236,24 @@ class PendingSolo extends APP_GameClass
             $explode_tile = explode('_', $parg2);
             $explode_position = explode('_', $varg1);
 
-            $place_market = self::getUniqueValueFromDB("SELECT card_location_arg FROM tile WHERE card_id = '{$explode_tile[1]}'");
+            $place_market = Table::getUniqueValueFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_id` = '{$explode_tile[1]}'");
 
             if ($explode_market[0] == 'plant') {
 
 
 
-                $card_id = self::getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                $card_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
-                $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+                $card_before = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `plant` WHERE `card_id` = {$card_id}");
                 $card_before['genre'] = 'plant';
 
-                $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
-                self::DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
+                Table::DbQuery("UPDATE `plant` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                 game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
 
-                $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM plant WHERE card_id = {$card_id}");
+                $card_after = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `plant` WHERE `card_id` = {$card_id}");
 
 
                 $card_color = $this->color_type[game::$instance->_PLANT_CARDS[$card_type]['type'] -1];
@@ -2269,18 +2278,18 @@ class PendingSolo extends APP_GameClass
             if ($explode_market[0] == 'room') {
 
 
-                $card_id = self::getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                $card_id = Table::getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
-                $card_before = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                $card_before = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `room` WHERE `card_id` = {$card_id}");
                 $card_before['genre'] = 'room';
 
-                $thumb = self::getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
-                self::DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                self::DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = Table::getUniqueValueFromDB("SELECT `card_thumb` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
+                Table::DbQuery("UPDATE `room` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                 game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
 
-                $card_after = self::getObjectFromDB("SELECT card_id id, card_type type, card_type_arg type_arg, card_location location, card_location_arg location_arg, card_thumb thumb FROM room WHERE card_id = {$card_id}");
+                $card_after = Table::getObjectFromDB("SELECT `card_id` `id`, `card_type` type, `card_type_arg` type_arg, `card_location` location, `card_location_arg` location_arg, `card_thumb` thumb FROM `room` WHERE `card_id` = {$card_id}");
 
                 $card_log_type = (game::$instance->_ROOM_CARDS[$card_type]['type'] -1)*(-100) ;
 
@@ -2302,7 +2311,7 @@ class PendingSolo extends APP_GameClass
 
             game::$instance->TestVerdoyanceSolo($this->player_id, $explode_market[0], $card_type, $explode_position[1]);
 
-            self::DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+            Table::DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` - 2 WHERE `player_id` = {$this->player_id}");
 
             $icon = '<span class="thumb_bt"></span>';
             game::$instance->notifyAllPlayers(
@@ -2374,21 +2383,21 @@ class PendingSolo extends APP_GameClass
             $explode_tile = explode('_', $explode[1]);
             $explode_position = explode('_', $parg2);
 
-            $place_market = game::$instance->getUniqueValueFromDB("SELECT card_location_arg FROM tile WHERE card_id = '{$explode_tile[1]}'");
+            $place_market = game::$instance->getUniqueValueFromDB("SELECT `card_location_arg` FROM `tile` WHERE `card_id` = '{$explode_tile[1]}'");
 
             if ($explode_market[0] == 'plant') {
 
 
 
-                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM plant WHERE card_type = '{$explode_market[1]}'");
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
                 $card_before = game::$instance->getPlant("card_id = {$card_id}");
                 $card_before['genre'] = 'plant';
 
-                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM plant WHERE card_type = '{$explode_market[1]}'");
-                game::$instance->DbQuery("UPDATE plant set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT `card_thumb` FROM `plant` WHERE `card_type` = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE `plant` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                 game::$instance->plant->moveCard($card_id, $this->player_id, $explode_position[1]);
 
                 $card_after = game::$instance->getPlant("card_id = {$card_id}");
@@ -2415,15 +2424,15 @@ class PendingSolo extends APP_GameClass
             if ($explode_market[0] == 'room') {
 
 
-                $card_id = game::$instance->getUniqueValueFromDB("SELECT card_id FROM room WHERE card_type = '{$explode_market[1]}'");
+                $card_id = game::$instance->getUniqueValueFromDB("SELECT `card_id` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
                 $card_type = $explode_market[1];
 
                 $card_before = game::$instance->getRoom("card_id = {$card_id}");
                 $card_before['genre'] = 'room';
 
-                $thumb = game::$instance->getUniqueValueFromDB("SELECT card_thumb FROM room WHERE card_type = '{$explode_market[1]}'");
-                game::$instance->DbQuery("UPDATE room set card_thumb = 0 WHERE card_id = '{$card_id}'");
-                game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb + $thumb WHERE player_id = '{$this->player_id}'");
+                $thumb = game::$instance->getUniqueValueFromDB("SELECT `card_thumb` FROM `room` WHERE `card_type` = '{$explode_market[1]}'");
+                game::$instance->DbQuery("UPDATE `room` set `card_thumb` = 0 WHERE `card_id` = '{$card_id}'");
+                game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` + $thumb WHERE `player_id` = '{$this->player_id}'");
                 game::$instance->room->moveCard($card_id, $this->player_id, $explode_position[1]);
 
                 $card_after = game::$instance->getRoom("card_id = {$card_id}");
@@ -2448,7 +2457,7 @@ class PendingSolo extends APP_GameClass
 
             game::$instance->TestVerdoyanceSolo($this->player_id, $explode_market[0], $card_type, $explode_position[1]);
 
-            game::$instance->DbQuery("UPDATE player set player_thumb = player_thumb - 2 WHERE player_id = {$this->player_id}");
+            game::$instance->DbQuery("UPDATE `player` set `player_thumb` = `player_thumb` - 2 WHERE `player_id` = {$this->player_id}");
 
             $icon = '<span class="thumb_bt"></span>';
             game::$instance->notifyAllPlayers(

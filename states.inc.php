@@ -16,18 +16,6 @@
  */
 
 $machinestates = [
-
-    // The initial state. Please do not modify.
-
-    1 => [
-        "name" => "gameSetup",
-        "description" => "",
-        "type" => "manager",
-        "action" => "stGameSetup",
-        "transitions" => ["" => 4]
-    ],
-
-
     2 => [
         "name" => "pending",
         "description" => '',
@@ -59,16 +47,4 @@ $machinestates = [
         "possibleactions" => ["actSelect"],
         "transitions" => ["next" => 2, "same" => 4, "zombiePass" => 4, "end" => 99]
     ],
-
-
-    // Final state.
-    // Please do not modify (and do not overload action/args methods).
-    99 => [
-        "name" => "gameEnd",
-        "description" => clienttranslate("End of game"),
-        "type" => "manager",
-        "action" => "stGameEnd",
-        "args" => "argGameEnd"
-    ],
-
 ];
