@@ -2909,7 +2909,7 @@ class Game extends Table
 
     function updateNbTurns()
     {
-        $player_id = (int)self::getActivePlayerId();
+        $player_id = (int) self::getActivePlayerId();
         $this->incStat(1, 'turns_number', $player_id);
         if (self::getPlayerNoById($player_id) == 1) {
             $this->incStat(1, 'turns_number');
@@ -2951,7 +2951,7 @@ class Game extends Table
     {
         if ($this->gamestate->getCurrentMainState()->name == "playerTurnMulti") {
             $explode = explode('_', $arg1);
-            $player_id = $this->getCurrentPlayerId(); // CURRENT!!! not active
+            $player_id = (int) $this->getCurrentPlayerId(); // CURRENT!!! not active
             $player_name = self::getPlayerNameById((int)$player_id);
 
             $card_firstplant_type = self::getUniqueValueFromDB("SELECT `card_type` FROM `plant` WHERE `card_location`={$player_id} AND `card_location_arg` = 99");
@@ -3011,7 +3011,7 @@ class Game extends Table
         $pot_origin = 0;
         $nbre_players = count(self::getObjectListFromDB("SELECT `player_id` FROM `player`", true));
         $explode = explode('_', $arg1);
-        $player_id = self::getActivePlayerId();
+        $player_id = (int) self::getActivePlayerId();
         $player_name = self::getPlayerNameById((int)$player_id);
 
         self::checkArgs('plant_' . $explode[0]);
@@ -3118,7 +3118,7 @@ class Game extends Table
     public function actValidateThumb(string $arg1)
     {
 
-        $player_id = self::getActivePlayerId();
+        $player_id = (int) self::getActivePlayerId();
         $player_name = self::getPlayerNameById((int)$player_id);
         $explode = explode(';', $arg1);
         $info = array_slice($explode, 1);
@@ -3503,7 +3503,7 @@ class Game extends Table
         if ($state["type"] === "activeplayer") {
             switch ($state_name) {
                 default: {
-                        $player_id = $this->getActivePlayerId();
+                        $player_id = (int) $this->getActivePlayerId();
                         self::DbQuery("delete from `pending` where `player_id` = {$player_id}");
                         $this->gamestate->nextState("zombiePass");
                         break;
