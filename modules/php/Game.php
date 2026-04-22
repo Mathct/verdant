@@ -575,17 +575,21 @@ class Game extends Table
     //                          |___/                                              
     /////////////////////////////////////////////////////////////////////////////////  
 
-    function addPending($player_id, $function, $arg = NULL, $arg2 = NULL, $arg3 = NULL, $arg4 = NULL)
+    public function addPending(int $player_id, string $function, ?string $arg = NULL, ?string $arg2 = NULL, ?string $arg3 = NULL, ?string $arg4 = NULL): void
     {
-        $sql = "INSERT INTO `pending` (`player_id`, `function`, `arg`, `arg2`, `arg3`, `arg4`) VALUES (" . $player_id . ", '" . $function . "', '" . $arg . "', '" . $arg2 . "', '" . $arg3 . "', '" . $arg4 . "')";
-        self::DbQuery($sql);
+        $sql = "INSERT INTO `pending` (`player_id`, `function`, `arg`, `arg2`, `arg3`, `arg4`) 
+                VALUES (" . $player_id . ", '" . $function . "', '" . $arg . "', '" . $arg2 . "', '" . $arg3 . "', '" . $arg4 . "')";
+        $this->DbQuery($sql);
     }
 
-    function addPendingFirst($player_id, $function, $arg = NULL, $arg2 = NULL, $arg3 = NULL, $arg4 = NULL)
+
+    // le pending est envoyé au fond (First mais on lit de Bas en Haut)
+    public function addPendingFirst(int $player_id, string $function, ?string $arg = NULL, ?string $arg2 = NULL, ?string $arg3 = NULL, ?string $arg4 = NULL): void
     {
-        $minid = self::getUniqueValueFromDB("select min(`id`) from `pending`") - 1;
-        $sql = "INSERT INTO `pending` (`id`, `player_id`, `function`, `arg`, `arg2`) VALUES (" . $minid . "," . $player_id . ", '" . $function . "', '" . $arg . "', '" . $arg2 . "')";
-        self::DbQuery($sql);
+        $minid = $this->getUniqueValueFromDB("SELECT MIN(`id`) FROM `pending`") - 1;
+        $sql = "INSERT INTO `pending` (`id`, `player_id`, `function`, `arg`, `arg2`, `arg3`, `arg4`)
+                VALUES (" . $minid . "," . $player_id . ", '" . $function . "', '" . $arg . "', '" . $arg2 . "', '" . $arg3 . "', '" . $arg4 . "')";
+        $this->DbQuery($sql);
     }
 
     function checkArgs($arg1)
