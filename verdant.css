@@ -82,15 +82,27 @@ body {
 /*
 /****************************************/
 
-  /* tooltip Card */
+  /* tooltip basic */
   .tooltip_content {
     display: flex;
     justify-content: space-between;
     height: auto;
     gap: 10px;
     flex-wrap: wrap;
-  
+}
+
+/* tooltip Card */
+  .tooltip_bigcontent {
+    display: flex;
+    justify-content: space-between;
+    height: auto;
+    gap: 10px;
+    flex-wrap: wrap;
   }
+
+  html[data-theme="dark"] .tooltip_bigcontent {
+  background: white;
+}
    
   .info_container {
     flex: 4;
@@ -128,10 +140,14 @@ body {
   }
 
   .tooltip_info {
-    font-family: "MinionPro", "Garamond", "Times New Roman", serif;
+    font-family: "MyriadPro", "Garamond", "Times New Roman", serif;
     font-size: 12pt;
     color:#2a5d9c;
   }
+
+  html[data-theme="dark"] .tooltip_info {
+  color:#d1d5db;
+}
 
   .tile_container {
     flex: 1;
@@ -191,6 +207,17 @@ body {
 font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   font-size: 16pt;
   line-height: 50px;
+}
+
+html[data-theme="dark"] .icon-text {
+  text-shadow: none;
+  color: black;
+}
+html[data-theme="dark"] #pagemaintitletext {
+  color: black;
+}
+html[data-theme="dark"] .player_score_value {
+  color: black;
 }
 
 .reserve {
@@ -864,6 +891,7 @@ font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
 
 .selectable_thumb_pannel
 {
+  position: relative;
   cursor: pointer;
   pointer-events: auto !important;
 }
@@ -1076,6 +1104,7 @@ font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
     top: 10px;
     font-size: 32px;
     cursor: pointer;
+    color: black;
 }
 
 @media (max-width: 768px) {
