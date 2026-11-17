@@ -44,7 +44,9 @@ body {
     background-size: auto; /* Taille originale de l'image */
 }
 
-
+.player-board, .roundedbox, #page-title, .current_player_is_active #page-title {
+  background-color: var(--palette-bga-gray-244, var(--palette-bga-gray-244));
+}
 
 /* Fonts and Tooltips */
 
@@ -209,23 +211,8 @@ font-family: "MyriadPro", "Segoe UI", "Helvetica Neue", "Arial", sans-serif;
   line-height: 50px;
 }
 
-html[data-theme="dark"] .icon-text {
-  text-shadow: none;
-  color: black;
-}
-html[data-theme="dark"] #pagemaintitletext {
-  color: black;
-}
-html[data-theme="dark"] .player_score_value {
-  color: black;
-}
-
 .reserve {
   background-position: -400% 0%;
-}
-
-.player-board, .roundedbox, #page-title, .current_player_is_active #page-title {
-  background-color: #d9e9c2;
 }
 
 
